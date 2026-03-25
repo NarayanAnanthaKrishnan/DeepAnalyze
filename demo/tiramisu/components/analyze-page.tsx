@@ -320,7 +320,7 @@ export function AnalyzePage({
     // ── Thinking (Analyze / Understand) ─────────────────────────────
     if (section.type === "Analyze" || section.type === "Understand") {
       return (
-        <div className="thinking-section text-[15px] leading-[1.75] whitespace-pre-wrap break-words">
+        <div className="thinking-section text-[16px] leading-[1.75] whitespace-pre-wrap break-words">
           {section.content}
           {isStreaming && <span className="streaming-cursor" />}
         </div>
@@ -358,14 +358,14 @@ export function AnalyzePage({
           {/* Code body */}
           <div className="bg-zinc-100 dark:bg-zinc-900/90">
             {isLarge || isStreaming ? (
-              <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-[13px] p-4 leading-[1.65]">
+              <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-[14px] p-4 leading-[1.65]">
                 <code>{code}</code>
                 {isStreaming && <span className="streaming-cursor" />}
               </pre>
             ) : (
               <CodeBlockCode code={code} language={lang}
-                theme={resolvedTheme === "dark" ? "vitesse-dark" : "horizon-bright"}
-                className="text-[13px] [&>pre]:!bg-transparent" />
+                theme={resolvedTheme === "dark" ? "vitesse-dark" : "github-light-default"}
+                className="text-[14px] [&>pre]:!bg-transparent" />
             )}
           </div>
         </div>
@@ -376,7 +376,7 @@ export function AnalyzePage({
     if (section.type === "Execute") {
       return (
         <div className="terminal-output-standalone rounded-lg bg-zinc-100 dark:bg-zinc-900/90 p-4 overflow-x-auto border border-zinc-200/60 dark:border-zinc-800/60">
-          <pre className="font-mono text-[13px] leading-[1.65] text-foreground/85 whitespace-pre-wrap">{section.content}</pre>
+          <pre className="font-mono text-[14px] leading-[1.65] text-foreground/85 whitespace-pre-wrap">{section.content}</pre>
         </div>
       );
     }
@@ -385,7 +385,7 @@ export function AnalyzePage({
     if (section.type === "Answer") {
       return (
         <div className="answer-block">
-          <div className="text-[15px] leading-[1.8] whitespace-pre-wrap break-words">
+          <div className="text-[16px] leading-[1.75] whitespace-pre-wrap break-words">
             {section.content}
             {isStreaming && <span className="streaming-cursor" />}
           </div>
@@ -405,7 +405,7 @@ export function AnalyzePage({
       <div className="flex items-center gap-1.5 mb-2.5">
         <span className="text-[9px] font-mono text-muted-foreground/50 uppercase tracking-widest">stdout</span>
       </div>
-      <pre className="font-mono text-[13px] leading-[1.65] text-foreground/85 whitespace-pre-wrap">{section.content}</pre>
+      <pre className="font-mono text-[14px] leading-[1.65] text-foreground/85 whitespace-pre-wrap">{section.content}</pre>
     </div>
   );
 
@@ -457,7 +457,7 @@ export function AnalyzePage({
   const renderUserBubble = (content: string, fileNames: string[], key: string) => (
     <motion.div key={key} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex justify-end mb-6">
       <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-primary/8 dark:bg-primary/12 border border-primary/10 px-4 py-3">
-        <p className="text-[15px] leading-[1.7] whitespace-pre-wrap">{content}</p>
+        <p className="text-[16px] leading-[1.75] whitespace-pre-wrap">{content}</p>
         {fileNames.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-2.5">
             {fileNames.map((name, i) => (
@@ -590,7 +590,7 @@ export function AnalyzePage({
           {phase === "uploading" && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-3 py-10">
               <Loader2 className="size-5 text-primary animate-spin" />
-              <TextShimmer className="text-[15px] font-display">Uploading {files.length} file{files.length > 1 ? "s" : ""}...</TextShimmer>
+              <TextShimmer className="text-[16px] font-display">Uploading {files.length} file{files.length > 1 ? "s" : ""}...</TextShimmer>
               <div className="w-36 h-px rounded-full bg-muted overflow-hidden">
                 <motion.div className="h-full bg-primary rounded-full" initial={{ width: "0%" }} animate={{ width: `${uploadProgress}%` }} />
               </div>
@@ -617,7 +617,7 @@ export function AnalyzePage({
               return (
                 <div key={`turn-${i}`}>
                   {turnPreTag && (
-                    <div className="text-[15px] text-muted-foreground whitespace-pre-wrap mt-2 mb-4">{turnPreTag}</div>
+                    <div className="text-[16px] leading-[1.75] text-muted-foreground whitespace-pre-wrap mt-2 mb-4">{turnPreTag}</div>
                   )}
                   <div className="sections-timeline">
                     {buildSectionElements(turnSections, `t${i}-`)}
@@ -636,12 +636,12 @@ export function AnalyzePage({
 
           {/* Current live stream */}
           {preTagContent && (phase === "streaming" || phase === "complete") && (
-            <div className="text-[15px] text-muted-foreground whitespace-pre-wrap mt-2 mb-4">{preTagContent}</div>
+            <div className="text-[16px] leading-[1.75] text-muted-foreground whitespace-pre-wrap mt-2 mb-4">{preTagContent}</div>
           )}
 
           {phase === "streaming" && sections.length === 0 && !preTagContent && (
             <div className="flex items-center justify-center py-8">
-              <TextShimmer className="text-[15px] font-display">Thinking...</TextShimmer>
+              <TextShimmer className="text-[16px] font-display">Thinking...</TextShimmer>
             </div>
           )}
 

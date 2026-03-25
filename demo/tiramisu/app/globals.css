@@ -212,12 +212,12 @@
 /* Thinking section — readable in both themes */
 .thinking-section {
   color: var(--foreground);
-  opacity: 0.85;
+  opacity: 1;
   font-style: italic;
 }
 
 .dark .thinking-section {
-  opacity: 0.7;
+  opacity: 1;
 }
 
 /* Terminal card (code blocks) */
