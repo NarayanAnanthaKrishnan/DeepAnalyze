@@ -41,6 +41,7 @@ import {
   getDownloadUrl,
   type WorkspaceFile,
 } from "@/lib/api";
+import { setActiveSession } from "@/lib/transfer-store";
 import {
   parseSections,
   getPreTagContent,
@@ -269,6 +270,7 @@ export function AnalyzePage({
           }
         }
         setWorkspaceFileNames(fNames);
+        setActiveSession(sessionId);
         const initialMsg: ChatMessage = { role: "user", content: prompt };
         setMessages([initialMsg]);
         await startStream([initialMsg], fNames);
@@ -280,6 +282,7 @@ export function AnalyzePage({
     return () => { cancelled = true; abortControllerRef.current?.abort(); stopRafLoop(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
   const handleStop = useCallback(async () => {
     try { await stopGeneration(sessionId); } catch { /* */ }
@@ -321,9 +324,13 @@ export function AnalyzePage({
   }, [followUpInput, followUpFiles, sessionId, accumulatedContent, messages, workspaceFileNames, startStream, dedupedArtifacts]);
 
   const handleClearWorkspace = useCallback(async () => {
+    // Stop any active streaming first
+    abortControllerRef.current?.abort();
+    stopRafLoop();
+    try { await stopGeneration(sessionId); } catch { /* */ }
     try { await clearWorkspace(sessionId); } catch { /* */ }
     router.push("/");
-  }, [sessionId, router]);
+  }, [sessionId, router, stopRafLoop]);
 
   const handleFollowUpFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) setFollowUpFiles((prev) => [...prev, ...Array.from(e.target.files!)]);

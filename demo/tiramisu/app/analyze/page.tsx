@@ -3,7 +3,8 @@
 import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { consumeTransfer, type TransferData } from "@/lib/transfer-store";
+import { consumeTransfer, popActiveSession, type TransferData } from "@/lib/transfer-store";
+import { stopGeneration } from "@/lib/api";
 import { AnalyzePage } from "@/components/analyze-page";
 
 function AnalyzeContent() {
@@ -20,13 +21,25 @@ function AnalyzeContent() {
     if (consumedRef.current) return;
 
     const tid = searchParams.get("tid");
-    if (!tid) {
+
+    // Helper: stop any lingering backend stream, then redirect to landing
+    const stopAndRedirect = async () => {
+      const staleSession = popActiveSession();
+      if (staleSession) {
+        // Await so the fetch completes before navigation cancels it
+        await stopGeneration(staleSession).catch(() => {});
+      }
       router.replace("/");
+    };
+
+    if (!tid) {
+      stopAndRedirect();
       return;
     }
     const data = consumeTransfer(tid);
     if (!data) {
-      router.replace("/");
+      // Refresh detected — transfer already consumed
+      stopAndRedirect();
       return;
     }
     consumedRef.current = true;

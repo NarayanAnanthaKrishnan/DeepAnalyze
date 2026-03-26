@@ -40,15 +40,36 @@ export function storeTransfer(data: TransferData): string {
   return id;
 }
 
+const ACTIVE_SESSION_KEY = "active_session_id";
+
+/** Save the active session ID so it can be stopped on refresh. */
+export function setActiveSession(sessionId: string): void {
+  try { sessionStorage.setItem(ACTIVE_SESSION_KEY, sessionId); } catch { /* noop */ }
+}
+
+/** Pop the active session ID (returns it and removes from storage). */
+export function popActiveSession(): string | null {
+  try {
+    const id = sessionStorage.getItem(ACTIVE_SESSION_KEY);
+    if (id) sessionStorage.removeItem(ACTIVE_SESSION_KEY);
+    return id;
+  } catch { return null; }
+}
+
 export function consumeTransfer(id: string): TransferData | undefined {
   // Fast path: in-memory Map (has File objects)
   const mem = pending.get(id);
-  if (mem) return mem;
+  if (mem) {
+    pending.delete(id);
+    try { sessionStorage.removeItem(SS_PREFIX + id); } catch { /* noop */ }
+    return mem;
+  }
 
   // Fallback: recover from sessionStorage (no File objects)
   try {
     const raw = sessionStorage.getItem(SS_PREFIX + id);
     if (raw) {
+      sessionStorage.removeItem(SS_PREFIX + id);
       const parsed = JSON.parse(raw);
       return {
         prompt: parsed.prompt,
