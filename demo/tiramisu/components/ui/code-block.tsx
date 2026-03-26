@@ -1,7 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { codeToHtml } from "shiki"
 
 export type CodeBlockProps = {
@@ -29,50 +29,56 @@ export type CodeBlockCodeProps = {
   language?: string
   theme?: string
   className?: string
-} & React.HTMLProps<HTMLDivElement>
+}
 
-function CodeBlockCode({
+// React.memo + ref-based innerHTML so parent re-renders (scroll, state)
+// never touch the highlighted DOM → browser text selection stays intact.
+const CodeBlockCode = React.memo(function CodeBlockCode({
   code,
   language = "tsx",
   theme = "github-light",
   className,
-  ...props
 }: CodeBlockCodeProps) {
-  const [highlightedHtml, setHighlightedHtml] = useState<string | null>(null)
+  const shikiRef = useRef<HTMLDivElement>(null)
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    async function highlight() {
-      if (!code) {
-        setHighlightedHtml("<pre><code></code></pre>")
-        return
-      }
+    const el = shikiRef.current
+    if (!el) return
 
-      const html = await codeToHtml(code, { lang: language, theme })
-      setHighlightedHtml(html)
+    if (!code) {
+      el.innerHTML = "<pre><code></code></pre>"
+      setReady(true)
+      return
     }
-    highlight()
+
+    let cancelled = false
+    codeToHtml(code, { lang: language, theme }).then((html) => {
+      if (cancelled) return
+      el.innerHTML = html.replace(/ tabindex="0"/g, "")
+      setReady(true)
+    })
+    return () => { cancelled = true }
   }, [code, language, theme])
 
-  const classNames = cn(
-    "w-full overflow-x-auto text-[14px] [&>pre]:px-4 [&>pre]:py-4",
+  const classes = cn(
+    "w-full overflow-x-auto text-[14px] [&>pre]:px-4 [&>pre]:py-4 select-text",
     className
   )
 
-  // SSR fallback: render plain code if not hydrated yet
-  return highlightedHtml ? (
-    <div
-      className={classNames}
-      dangerouslySetInnerHTML={{ __html: highlightedHtml }}
-      {...props}
-    />
-  ) : (
-    <div className={classNames} {...props}>
-      <pre>
-        <code>{code}</code>
-      </pre>
-    </div>
+  return (
+    <>
+      {/* Ref-only div for shiki — React never reconciles its children */}
+      <div ref={shikiRef} className={classes} style={ready ? undefined : { display: "none" }} />
+      {/* React-managed fallback, hidden once shiki is ready */}
+      {!ready && (
+        <div className={classes}>
+          <pre><code>{code}</code></pre>
+        </div>
+      )}
+    </>
   )
-}
+})
 
 export type CodeBlockGroupProps = React.HTMLAttributes<HTMLDivElement>
 

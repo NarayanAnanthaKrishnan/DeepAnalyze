@@ -227,6 +227,13 @@
   border: 1px solid var(--border);
 }
 
+.terminal-card pre,
+.terminal-card code,
+.terminal-card span,
+.terminal-card div {
+  user-select: text;
+}
+
 /* Answer block — warm wash, no left bar */
 .answer-block {
   position: relative;

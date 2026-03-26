@@ -159,7 +159,11 @@ export function AnalyzePage({
     const el = scrollContainerRef.current;
     if (!el) return;
     const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
-    setShowScrollBtn(!atBottom);
+    // Use functional update to avoid unnecessary re-renders that break text selection
+    setShowScrollBtn((prev) => {
+      const next = !atBottom;
+      return prev === next ? prev : next;
+    });
   }, []);
 
   const scrollToBottom = useCallback(() => {
@@ -499,12 +503,9 @@ export function AnalyzePage({
       const isCodeWithOutput = section.type === "Code" && section.isComplete && next?.type === "Execute" && next.isComplete;
 
       elements.push(
-        <motion.div
+        <div
           key={`${keyPrefix}${section.id}`}
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="section-row"
+          className="section-row animate-in fade-in slide-in-from-bottom-1 duration-300"
         >
           <div className="section-indicator">
             <div className="indicator-line-segment" style={{ height: 8 }} />
@@ -516,7 +517,7 @@ export function AnalyzePage({
             {renderSection(section, next)}
             {isCodeWithOutput && renderAttachedOutput(next!)}
           </div>
-        </motion.div>
+        </div>
       );
     }
     return elements;
