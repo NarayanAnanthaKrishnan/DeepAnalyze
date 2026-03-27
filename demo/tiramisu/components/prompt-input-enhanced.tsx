@@ -8,8 +8,9 @@ import {
 } from "@/components/ui/prompt-input";
 import { Button } from "@/components/ui/button";
 import { ThemeSelector } from "@/components/theme-selector";
-import { ArrowUp, Paperclip, Mic, Square, X, Sparkles } from "lucide-react";
-import { useRef } from "react";
+import { ArrowUp, Paperclip, Mic, Square, X, Sparkles, ChevronDown } from "lucide-react";
+import { useRef, useState } from "react";
+import type { EngineType } from "@/lib/transfer-store";
 
 interface PromptInputEnhancedProps {
   input: string;
@@ -20,6 +21,8 @@ interface PromptInputEnhancedProps {
   onReportThemeChange: (theme: string) => void;
   planRouterEnabled: boolean;
   onPlanRouterEnabledChange: (enabled: boolean) => void;
+  engine: EngineType;
+  onEngineChange: (engine: EngineType) => void;
   isLoading: boolean;
   onSubmit: () => void;
 }
@@ -33,10 +36,14 @@ export function PromptInputEnhanced({
   onReportThemeChange,
   planRouterEnabled,
   onPlanRouterEnabledChange,
+  engine,
+  onEngineChange,
   isLoading,
   onSubmit,
 }: PromptInputEnhancedProps) {
   const uploadInputRef = useRef<HTMLInputElement>(null);
+  const [engineDropdownOpen, setEngineDropdownOpen] = useState(false);
+  const engineDropdownRef = useRef<HTMLDivElement>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -124,18 +131,62 @@ export function PromptInputEnhanced({
 
           <div className="w-px h-6 bg-border/40 hidden sm:block" />
 
-          <PromptInputAction tooltip={planRouterEnabled ? "Plan + Router: ON — Gemini plans analysis and supervises execution (error recovery + checkpoints)" : "Plan + Router: OFF — Direct analysis without Gemini supervision"}>
-            <button
-              onClick={(e) => { e.stopPropagation(); onPlanRouterEnabledChange(!planRouterEnabled); }}
-              className={`flex items-center gap-2 px-3 h-9 border transition-all font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.15em] font-bold ${planRouterEnabled
-                ? "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20"
-                : "border-border/20 bg-secondary/30 text-muted-foreground hover:bg-secondary/60"
-                }`}
-            >
-              <Sparkles className="size-3.5" />
-              <span className="hidden sm:inline">Plan + Route</span>
-            </button>
+          {/* Engine Selector Dropdown */}
+          <PromptInputAction tooltip={engine === "gemini" ? "Engine: Gemini 3 Flash (API)" : "Engine: DeepAnalyze-8B (Local)"}>
+            <div className="relative" ref={engineDropdownRef}>
+              <button
+                onClick={(e) => { e.stopPropagation(); setEngineDropdownOpen(!engineDropdownOpen); }}
+                onBlur={() => setTimeout(() => setEngineDropdownOpen(false), 150)}
+                className={`flex items-center gap-2 px-3 h-9 border transition-all font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.15em] font-bold ${engine === "gemini"
+                  ? "border-blue-500/40 bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20"
+                  : "border-border/20 bg-secondary/30 text-muted-foreground hover:bg-secondary/60"
+                  }`}
+              >
+                <span className="hidden sm:inline">{engine === "gemini" ? "Gemini Flash" : "DeepAnalyze"}</span>
+                <span className="sm:hidden">{engine === "gemini" ? "Gemini" : "DA"}</span>
+                <ChevronDown className={`size-3 transition-transform ${engineDropdownOpen ? "rotate-180" : ""}`} />
+              </button>
+              {engineDropdownOpen && (
+                <div className="absolute top-full left-0 mt-1 z-50 min-w-[180px] border border-border/40 bg-background/95 backdrop-blur-md shadow-xl">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onEngineChange("deepanalyze"); setEngineDropdownOpen(false); }}
+                    className={`w-full text-left px-3 py-2.5 font-mono text-[10px] uppercase tracking-[0.15em] transition-colors flex items-center gap-2 ${engine === "deepanalyze" ? "bg-primary/10 text-primary font-bold" : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"}`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${engine === "deepanalyze" ? "bg-primary" : "bg-border"}`} />
+                    DeepAnalyze-8B
+                  </button>
+                  <div className="h-px bg-border/30" />
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onEngineChange("gemini"); setEngineDropdownOpen(false); }}
+                    className={`w-full text-left px-3 py-2.5 font-mono text-[10px] uppercase tracking-[0.15em] transition-colors flex items-center gap-2 ${engine === "gemini" ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold" : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"}`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${engine === "gemini" ? "bg-blue-500" : "bg-border"}`} />
+                    Gemini 3 Flash
+                  </button>
+                </div>
+              )}
+            </div>
           </PromptInputAction>
+
+          {/* Plan + Route — only visible for DeepAnalyze engine */}
+          {engine === "deepanalyze" && (
+            <>
+              <div className="w-px h-6 bg-border/40 hidden sm:block" />
+
+              <PromptInputAction tooltip={planRouterEnabled ? "Plan + Router: ON — Gemini plans analysis and supervises execution (error recovery + checkpoints)" : "Plan + Router: OFF — Direct analysis without Gemini supervision"}>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onPlanRouterEnabledChange(!planRouterEnabled); }}
+                  className={`flex items-center gap-2 px-3 h-9 border transition-all font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.15em] font-bold ${planRouterEnabled
+                    ? "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20"
+                    : "border-border/20 bg-secondary/30 text-muted-foreground hover:bg-secondary/60"
+                    }`}
+                >
+                  <Sparkles className="size-3.5" />
+                  <span className="hidden sm:inline">Plan + Route</span>
+                </button>
+              </PromptInputAction>
+            </>
+          )}
         </div>
 
         {/* Right: Execute */}

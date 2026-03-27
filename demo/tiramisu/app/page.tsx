@@ -9,7 +9,7 @@ import { TextScramble } from "@/components/ui/text-scrammble";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { PromptInputEnhanced } from "@/components/prompt-input-enhanced";
 import { PresetSelector } from "@/components/preset-selector";
-import { storeTransfer } from "@/lib/transfer-store";
+import { storeTransfer, type EngineType } from "@/lib/transfer-store";
 import { Zap, ZapOff } from "lucide-react";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -21,6 +21,7 @@ export default function Home() {
   const [reportTheme, setReportTheme] = useState("modern");
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
   const [planRouterEnabled, setPlanRouterEnabled] = useState(false);
+  const [engine, setEngine] = useState<EngineType>("deepanalyze");
   const [dynamicBgEnabled, setDynamicBgEnabled] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -29,7 +30,10 @@ export default function Home() {
     setMounted(true);
     const storedPlan = localStorage.getItem("planRouterEnabled");
     if (storedPlan === "true") setPlanRouterEnabled(true);
-    
+
+    const storedEngine = localStorage.getItem("engine");
+    if (storedEngine === "gemini") setEngine("gemini");
+
     const storedBg = localStorage.getItem("dynamicBgEnabled");
     if (storedBg === "true") setDynamicBgEnabled(true);
   }, []);
@@ -37,6 +41,10 @@ export default function Home() {
   useEffect(() => {
     localStorage.setItem("planRouterEnabled", String(planRouterEnabled));
   }, [planRouterEnabled]);
+
+  useEffect(() => {
+    localStorage.setItem("engine", engine);
+  }, [engine]);
 
   useEffect(() => {
     localStorage.setItem("dynamicBgEnabled", String(dynamicBgEnabled));
@@ -54,7 +62,8 @@ export default function Home() {
       files,
       reportTheme,
       presetId: selectedPresetId,
-      planRouterEnabled,
+      planRouterEnabled: engine === "gemini" ? false : planRouterEnabled,
+      engine,
     });
     router.push(`/analyze?tid=${tid}`);
   };
@@ -163,6 +172,8 @@ export default function Home() {
                onReportThemeChange={setReportTheme}
                planRouterEnabled={planRouterEnabled}
                onPlanRouterEnabledChange={setPlanRouterEnabled}
+               engine={engine}
+               onEngineChange={setEngine}
                isLoading={false}
                onSubmit={handleAnalyze}
              />

@@ -1,15 +1,21 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
+import time
 import threading
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
 
+import textwrap
+
 import httpx
 import openai
+
+log = logging.getLogger(__name__)
 
 from .execution import (
     build_file_block,
@@ -64,7 +70,7 @@ def _normalize_temperature(value: Any) -> float:
 def build_chat_runtime_config(payload: dict[str, Any] | None) -> ChatRuntimeConfig:
     body = payload or {}
     provider = str(body.get("provider") or "local").strip().lower() or "local"
-    if provider not in {"local", "heywhale"}:
+    if provider not in {"local", "heywhale", "gemini"}:
         provider = "local"
 
     api_base = str(body.get("api_base") or "").strip()
@@ -169,6 +175,200 @@ def _iter_heywhale_stream(
                 yield delta, {"choices": [{"finish_reason": finish_reason}]}
 
 
+GEMINI_SYSTEM_PROMPT = textwrap.dedent("""\
+    You are an autonomous data science agent. You analyze datasets by writing
+    and executing Python code iteratively until you reach a conclusion.
+
+    ## Output Format
+    Structure your output using these XML tags:
+
+    <Analyze> — Reasoning, planning, and reflection. Think step-by-step about
+    what to do next, what you've learned so far, and what hypotheses to test.
+
+    <Understand> — Data comprehension. Describe the structure, types, quality,
+    and relationships in the data.
+
+    <Code> — Python code to execute. Wrap code in a markdown code block:
+    ```python
+    # your code here
+    ```
+    </Code>
+
+    After you write a </Code> closing tag, STOP generating immediately. The
+    system will execute your code and return results in an <Execute> block.
+    You will then continue from there. NEVER generate <Execute> blocks yourself
+    — they are injected by the execution environment only.
+
+    <Answer> — Your final conclusion. Summarize findings, key insights,
+    and recommendations. This ends the analysis.
+
+    ## Rules
+    - CRITICAL: After writing </Code>, you MUST stop. Do NOT write <Execute> or
+      guess what the output might be. Wait for the system to provide real results.
+    - Always start with <Analyze> to plan your approach
+    - Read data files from the current working directory (they're already there)
+    - We are running each Code block in a separate session, so you can't rely on the previous session's state. So, you need to load the data and do all the preprocessing steps in each session.
+    - Use pandas, matplotlib, seaborn, numpy, scipy, scikit-learn as needed
+    - Save visualizations with plt.savefig('descriptive_name.png', dpi=150, bbox_inches='tight')
+    - Always call plt.close() after saving figures
+    - Save important results, statistics, and summaries to .txt files using
+      open('descriptive_name.txt', 'w').write(content). For example, save
+      EDA summaries, model metrics, statistical test results, etc.
+    - Print results explicitly so they appear in execution output
+    - Iterate: analyze results, write more code, refine until you have a thorough answer
+    - End with <Answer> containing a clear, well-structured summary
+""")
+
+
+GEMINI_STREAM_API_URL = (
+    "https://generativelanguage.googleapis.com/v1beta/models/{model}"
+    ":streamGenerateContent?alt=sse"
+)
+
+
+def _convert_messages_to_gemini_format(
+    conversation: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Convert OpenAI-style messages to Gemini contents format."""
+    contents: list[dict[str, Any]] = []
+    for msg in conversation:
+        role = msg.get("role", "")
+        content = str(msg.get("content", ""))
+        if role == "user":
+            contents.append({"role": "user", "parts": [{"text": content}]})
+        elif role == "assistant":
+            contents.append({"role": "model", "parts": [{"text": content}]})
+        elif role == "execute":
+            # Execution results go back as user messages
+            contents.append({
+                "role": "user",
+                "parts": [{"text": f"[Execution Output]\n{content}"}],
+            })
+    # Gemini requires alternating user/model turns — merge consecutive same-role
+    merged: list[dict[str, Any]] = []
+    for c in contents:
+        if merged and merged[-1]["role"] == c["role"]:
+            merged[-1]["parts"].extend(c["parts"])
+        else:
+            merged.append(c)
+    return merged
+
+
+_GEMINI_MAX_RETRIES = 3
+_GEMINI_RETRY_BACKOFF = [2, 4, 8]  # seconds
+_GEMINI_RETRYABLE_STATUS = {429, 500, 502, 503}
+
+
+def _iter_gemini_stream(
+    conversation: list[dict[str, Any]],
+    runtime_config: ChatRuntimeConfig,
+):
+    """Stream from Gemini API, yielding (delta_text, chunk_dict, is_thinking).
+
+    Retries on transient errors (429, 5xx) with exponential backoff.
+    """
+    model = runtime_config.model or settings.gemini_model
+    url = GEMINI_STREAM_API_URL.format(model=model)
+
+    contents = _convert_messages_to_gemini_format(conversation)
+
+    request_body = {
+        "contents": contents,
+        "systemInstruction": {"parts": [{"text": GEMINI_SYSTEM_PROMPT}]},
+        "generationConfig": {
+            "temperature": 1.0,
+            "maxOutputTokens": 65536,
+            "stopSequences": ["</Code>"],
+            "thinkingConfig": {
+                "thinkingLevel": "high",
+                "includeThoughts": True,
+            },
+        },
+    }
+
+    last_exc: Exception | None = None
+    for attempt in range(_GEMINI_MAX_RETRIES):
+        try:
+            with httpx.Client(timeout=None) as http_client:
+                with http_client.stream(
+                    "POST",
+                    url,
+                    headers={
+                        "Content-Type": "application/json",
+                        "x-goog-api-key": settings.gemini_api_key,
+                    },
+                    json=request_body,
+                ) as response:
+                    if response.status_code in _GEMINI_RETRYABLE_STATUS:
+                        wait = _GEMINI_RETRY_BACKOFF[min(attempt, len(_GEMINI_RETRY_BACKOFF) - 1)]
+                        log.warning(
+                            "Gemini returned %s, retrying in %ds (attempt %d/%d)",
+                            response.status_code, wait, attempt + 1, _GEMINI_MAX_RETRIES,
+                        )
+                        time.sleep(wait)
+                        continue
+                    response.raise_for_status()
+
+                    for raw_line in response.iter_lines():
+                        if not raw_line:
+                            continue
+                        line = raw_line.strip()
+                        if not line:
+                            continue
+                        if line.startswith("data:"):
+                            line = line[5:].strip()
+                        if line == "[DONE]" or not line:
+                            break
+                        try:
+                            payload = json.loads(line)
+                        except Exception:
+                            continue
+
+                        candidates = payload.get("candidates") or []
+                        if not candidates:
+                            continue
+
+                        parts = (
+                            candidates[0].get("content", {}).get("parts") or []
+                        )
+                        for part in parts:
+                            text = part.get("text")
+                            if text is None:
+                                continue
+                            is_thinking = bool(part.get("thought"))
+                            yield text, payload, is_thinking
+
+                        finish_reason = candidates[0].get("finishReason")
+                        if finish_reason and finish_reason not in ("FINISH_REASON_UNSPECIFIED",):
+                            break
+                    # Successfully streamed — exit retry loop
+                    return
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code in _GEMINI_RETRYABLE_STATUS:
+                last_exc = exc
+                wait = _GEMINI_RETRY_BACKOFF[min(attempt, len(_GEMINI_RETRY_BACKOFF) - 1)]
+                log.warning(
+                    "Gemini HTTP %s, retrying in %ds (attempt %d/%d)",
+                    exc.response.status_code, wait, attempt + 1, _GEMINI_MAX_RETRIES,
+                )
+                time.sleep(wait)
+                continue
+            raise
+        except (httpx.ConnectError, httpx.ReadTimeout) as exc:
+            last_exc = exc
+            wait = _GEMINI_RETRY_BACKOFF[min(attempt, len(_GEMINI_RETRY_BACKOFF) - 1)]
+            log.warning(
+                "Gemini connection error, retrying in %ds (attempt %d/%d): %s",
+                wait, attempt + 1, _GEMINI_MAX_RETRIES, exc,
+            )
+            time.sleep(wait)
+            continue
+
+    # All retries exhausted
+    if last_exc:
+        raise last_exc
+
+
 def _resolve_workspace_selection(
     workspace: Iterable[str] | None,
     workspace_dir: str,
@@ -244,8 +444,12 @@ def bot_stream(
     generated_dir = str(Path(workspace_dir) / "generated")
     Path(generated_dir).mkdir(parents=True, exist_ok=True)
 
-    # Hybrid router state
-    router_active = router_enabled and settings.router_active
+    # Hybrid router state (never active for Gemini provider)
+    router_active = (
+        router_enabled
+        and settings.router_active
+        and runtime_config.provider != "gemini"
+    )
     successful_exec_count = 0
     original_user_prompt = next(
         (str(m.get("content", "")) for m in (messages or []) if m.get("role") == "user"),
@@ -274,18 +478,41 @@ def bot_stream(
             last_chunk = None
             leading_chunks: list[str] = []
             leading_decided = not should_patch_first_assistant_message
-            stream_iter = (
-                _iter_heywhale_stream(conversation, runtime_config)
-                if runtime_config.provider == "heywhale"
-                else _iter_local_stream(conversation, runtime_config)
-            )
+            is_gemini = runtime_config.provider == "gemini"
+
+            if is_gemini:
+                stream_iter_gemini = _iter_gemini_stream(conversation, runtime_config)
+            elif runtime_config.provider == "heywhale":
+                stream_iter_legacy = _iter_heywhale_stream(conversation, runtime_config)
+            else:
+                stream_iter_legacy = _iter_local_stream(conversation, runtime_config)
+
+            # Gemini thinking state
+            _in_thinking = False
+
             try:
-                for delta, chunk in stream_iter:
-                    if stop_event.is_set():
-                        finished = True
-                        break
-                    last_chunk = chunk
-                    if delta is not None:
+                if is_gemini:
+                    for delta, chunk, is_thinking in stream_iter_gemini:
+                        if stop_event.is_set():
+                            finished = True
+                            break
+                        last_chunk = chunk
+                        if delta is None:
+                            continue
+
+                        if is_thinking:
+                            # Wrap thinking deltas in <Thinking> tags
+                            if not _in_thinking:
+                                _in_thinking = True
+                                yield "<Thinking>\n"
+                            yield delta
+                            continue
+
+                        # Non-thinking text — close thinking block if open
+                        if _in_thinking:
+                            _in_thinking = False
+                            yield "\n</Thinking>\n"
+
                         if not leading_decided:
                             leading_chunks.append(delta)
                             combined = "".join(leading_chunks)
@@ -300,23 +527,81 @@ def bot_stream(
                             yield combined
                             should_patch_first_assistant_message = False
                             continue
+
                         cur_res += delta
                         yield delta
-                    if "</Answer>" in cur_res:
-                        finished = True
-                        break
-            except httpx.HTTPError as exc:
-                raise RuntimeError(f"HeyWhale request failed: {exc}") from exc
+
+                        if "</Answer>" in cur_res:
+                            finished = True
+                            break
+                        # Break on </Code> so the backend can extract and
+                        # execute the code, then call Gemini again with
+                        # the real execution results.
+                        if "</Code>" in cur_res:
+                            break
+                else:
+                    for delta, chunk in stream_iter_legacy:
+                        if stop_event.is_set():
+                            finished = True
+                            break
+                        last_chunk = chunk
+                        if delta is not None:
+                            if not leading_decided:
+                                leading_chunks.append(delta)
+                                combined = "".join(leading_chunks)
+                                if not combined.strip():
+                                    continue
+                                leading_decided = True
+                                should_prefix = not _starts_with_structured_tag(combined)
+                                if should_prefix:
+                                    cur_res += "<Analyze>\n"
+                                    yield "<Analyze>\n"
+                                cur_res += combined
+                                yield combined
+                                should_patch_first_assistant_message = False
+                                continue
+                            cur_res += delta
+                            yield delta
+                        if "</Answer>" in cur_res:
+                            finished = True
+                            break
+            except (httpx.HTTPError, RuntimeError) as exc:
+                log.error("Stream request failed: %s", exc)
+                if is_gemini:
+                    # Yield an error message to the frontend instead of crashing
+                    err_msg = (
+                        f"\n<Analyze>\n[Error] Gemini API request failed after "
+                        f"{_GEMINI_MAX_RETRIES} retries: {exc}\n"
+                        f"Please try again.\n</Analyze>\n"
+                    )
+                    yield err_msg
+                    finished = True
+                    break
+                raise RuntimeError(f"Stream request failed: {exc}") from exc
+
+            # Close any open thinking block at end of stream
+            if _in_thinking:
+                _in_thinking = False
+                yield "\n</Thinking>\n"
 
             if stop_event.is_set():
                 break
 
             finish_reason = None
             if last_chunk:
-                try:
-                    finish_reason = last_chunk["choices"][0]["finish_reason"]
-                except Exception:
-                    finish_reason = getattr(last_chunk.choices[0], "finish_reason", None)
+                if is_gemini:
+                    # Gemini uses finishReason in candidates
+                    try:
+                        fr = (last_chunk.get("candidates") or [{}])[0].get("finishReason")
+                        if fr == "STOP":
+                            finish_reason = "stop"
+                    except Exception:
+                        pass
+                else:
+                    try:
+                        finish_reason = last_chunk["choices"][0]["finish_reason"]
+                    except Exception:
+                        finish_reason = getattr(last_chunk.choices[0], "finish_reason", None)
 
             missing_tag = _infer_missing_close_tag(cur_res)
             if finish_reason == "stop" and not finished and missing_tag:
@@ -333,13 +618,15 @@ def bot_stream(
             if not code_str:
                 continue
 
-            # ── Pre-execution validator (only when plan+router is active) ──
-            if router_active and code_str:
+            # ── Pre-execution validator ──
+            # Always apply lightweight code patching (auto-imports, encoding fixes).
+            # Only emit RouterGuidance warnings when plan+router is active.
+            if code_str:
                 data_ctx = plan or ""
                 patched_code, validation_warning = validate_code_before_execution(
                     code_str, data_ctx, file_names=workspace_paths,
                 )
-                if validation_warning:
+                if router_active and validation_warning:
                     warn_block = (
                         f"\n<RouterGuidance>\n[Pre-execution Check]\n"
                         f"{validation_warning}\n</RouterGuidance>\n"
@@ -352,16 +639,23 @@ def bot_stream(
                 code_str = patched_code
 
             before_state = snapshot_workspace_files(workspace_dir)
+            log.info("Before exec: %d files in workspace %s", len(before_state), workspace_dir)
             exe_output = execute_code_safe(code_str, workspace_dir, session_id)
             if stop_event.is_set():
                 break
             after_state = snapshot_workspace_files(workspace_dir)
+            new_files = [p for p in after_state if p not in before_state]
+            modified_files = [p for p in after_state if p in before_state and after_state[p] != before_state[p]]
+            log.info("After exec: %d files, %d new, %d modified", len(after_state), len(new_files), len(modified_files))
+            if new_files:
+                log.info("New files: %s", [str(p) for p in new_files])
             artifact_paths = collect_artifact_paths(
                 before_state,
                 after_state,
                 generated_dir,
                 session_id,
             )
+            log.info("Artifact paths: %s", [str(p) for p in artifact_paths])
 
             exe_str = f"\n<Execute>\n```\n{exe_output}\n```\n</Execute>\n"
             file_block = build_file_block(artifact_paths, workspace_dir, session_id)

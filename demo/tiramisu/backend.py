@@ -1,8 +1,10 @@
+import logging
 import uvicorn
 
 from backend_app.app import app
 from backend_app.settings import settings
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 
 if __name__ == "__main__":
     print("Starting backend service...")

@@ -1,4 +1,5 @@
 import { BACKEND_URL } from "./config";
+import type { EngineType } from "./transfer-store";
 
 export async function uploadFiles(
   sessionId: string,
@@ -40,16 +41,18 @@ export function startChatStream(
   workspace: string[],
   signal: AbortSignal,
   plan?: string | null,
-  routerEnabled?: boolean
+  routerEnabled?: boolean,
+  engine?: EngineType
 ): Promise<Response> {
+  const isGemini = engine === "gemini";
   return fetch(`${BACKEND_URL}/chat/completions`, {
     method: "POST",
     signal,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "DeepAnalyze-8B",
-      provider: "local",
-      temperature: 0.4,
+      model: isGemini ? "gemini-3-flash-preview" : "DeepAnalyze-8B",
+      provider: isGemini ? "gemini" : "local",
+      temperature: isGemini ? 1.0 : 0.4,
       messages,
       workspace,
       stream: true,

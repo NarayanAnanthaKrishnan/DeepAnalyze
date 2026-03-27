@@ -50,6 +50,7 @@ import {
   type SectionType,
 } from "@/lib/stream-parser";
 import { cn } from "@/lib/utils";
+import type { EngineType } from "@/lib/transfer-store";
 
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -67,6 +68,7 @@ export interface SessionSnapshot {
   workspaceFileNames: string[];
   plan?: string | null;
   planRouterEnabled?: boolean;
+  engine?: EngineType;
 }
 
 interface AnalyzePageProps {
@@ -76,6 +78,7 @@ interface AnalyzePageProps {
   presetId: string | null;
   planningEnabled: boolean;
   routerEnabled: boolean;
+  engine: EngineType;
   sessionId: string;
   recoverySnapshot?: SessionSnapshot | null;
 }
@@ -102,6 +105,7 @@ const SECTION_META: Record<SectionType, { label: string; color: string }> = {
   Answer: { label: "answer", color: "var(--primary)" },
   File: { label: "files", color: "var(--primary)" },
   RouterGuidance: { label: "senior analyst", color: "var(--chart-4)" },
+  Thinking: { label: "reasoning", color: "var(--muted-foreground)" },
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────
@@ -131,6 +135,7 @@ export function AnalyzePage({
   presetId,
   planningEnabled,
   routerEnabled,
+  engine,
   sessionId,
   recoverySnapshot,
 }: AnalyzePageProps) {
@@ -184,7 +189,7 @@ export function AnalyzePage({
     try {
       const snap: SessionSnapshot = {
         prompt, reportTheme, presetId, phase,
-        accumulatedContent, completedTurns, messages, workspaceFileNames, plan,
+        accumulatedContent, completedTurns, messages, workspaceFileNames, plan, engine,
       };
       sessionStorage.setItem(`snapshot:${sessionId}`, JSON.stringify(snap));
     } catch { /* quota — non-critical */ }
@@ -240,7 +245,7 @@ export function AnalyzePage({
       const controller = new AbortController();
       abortControllerRef.current = controller;
       try {
-        const response = await startChatStream(sessionId, chatMessages, wsFiles, controller.signal, planText, routerEnabled);
+        const response = await startChatStream(sessionId, chatMessages, wsFiles, controller.signal, planText, routerEnabled, engine);
         if (!response.ok) throw new Error(`Server error: ${response.status}`);
         const reader = response.body?.getReader();
         if (!reader) throw new Error("No response body");
@@ -278,7 +283,7 @@ export function AnalyzePage({
         }
       }
     },
-    [sessionId, startRafLoop, stopRafLoop]
+    [sessionId, startRafLoop, stopRafLoop, engine, routerEnabled]
   );
 
   // ── Initial upload ────────────────────────────────────────────────
@@ -325,9 +330,9 @@ export function AnalyzePage({
         setWorkspaceFileNames(fNames);
         setActiveSession(sessionId);
 
-        // Planning phase: profile data + Gemini plan (only if enabled)
+        // Planning phase: profile data + Gemini plan (only if enabled, not for Gemini engine)
         let planText: string | null = null;
-        if (planningEnabled) {
+        if (planningEnabled && engine !== "gemini") {
           setPhase("planning");
           try {
             const planResult = await planAnalysis(sessionId, prompt, fNames);
@@ -415,6 +420,30 @@ export function AnalyzePage({
 
   const renderSection = (section: ParsedSection, nextSection?: ParsedSection) => {
     const isStreaming = !section.isComplete;
+
+    // ── Gemini Thinking (reasoning trace) ───────────────────────────
+    if (section.type === "Thinking") {
+      return (
+        <details className="group border border-blue-500/10 bg-blue-500/[0.02] overflow-hidden" open={isStreaming}>
+          <summary className="cursor-pointer px-4 py-2.5 flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
+            <span className="size-1.5 bg-blue-500/60 rotate-45" />
+            {isStreaming ? (
+              <span className="flex items-center gap-1.5">
+                Reasoning
+                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
+              </span>
+            ) : (
+              "Reasoning Trace"
+            )}
+            <span className="ml-auto text-[10px] opacity-50 group-open:hidden">click to expand</span>
+          </summary>
+          <div className="px-4 pb-4 pt-1 text-sm text-muted-foreground/70 italic leading-[1.75] whitespace-pre-wrap break-words">
+            {section.content}
+            {isStreaming && <span className="streaming-cursor" />}
+          </div>
+        </details>
+      );
+    }
 
     // ── Thinking (Analyze / Understand) ─────────────────────────────
     if (section.type === "Analyze" || section.type === "Understand") {
@@ -618,6 +647,19 @@ export function AnalyzePage({
       }
 
       const isCodeWithOutput = section.type === "Code" && section.isComplete && next?.type === "Execute" && next.isComplete;
+
+      // Thinking sections render without the timeline indicator
+      if (section.type === "Thinking") {
+        elements.push(
+          <div
+            key={`${keyPrefix}${section.id}`}
+            className="animate-in fade-in slide-in-from-bottom-1 duration-300 mb-4"
+          >
+            {renderSection(section, next)}
+          </div>
+        );
+        continue;
+      }
 
       elements.push(
         <div

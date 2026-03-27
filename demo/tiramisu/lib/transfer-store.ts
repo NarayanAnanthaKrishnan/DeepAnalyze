@@ -8,12 +8,15 @@
  * skip re-uploading because the backend workspace already has them.
  */
 
+export type EngineType = "deepanalyze" | "gemini";
+
 export interface TransferData {
   prompt: string;
   files: File[];
   reportTheme: string;
   presetId: string | null;
   planRouterEnabled: boolean;
+  engine: EngineType;
 }
 
 const pending = new Map<string, TransferData>();
@@ -55,6 +58,7 @@ export function storeTransfer(data: TransferData): string {
         reportTheme: data.reportTheme,
         presetId: data.presetId,
         planRouterEnabled: data.planRouterEnabled,
+        engine: data.engine,
       })
     );
   } catch {
@@ -107,6 +111,7 @@ export function consumeTransfer(id: string): TransferData | undefined {
         reportTheme: parsed.reportTheme,
         presetId: parsed.presetId ?? null,
         planRouterEnabled: parsed.planRouterEnabled ?? false,
+        engine: parsed.engine ?? "deepanalyze",
       };
     }
   } catch {

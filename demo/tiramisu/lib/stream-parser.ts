@@ -5,7 +5,8 @@ export type SectionType =
   | "Execute"
   | "Answer"
   | "File"
-  | "RouterGuidance";
+  | "RouterGuidance"
+  | "Thinking";
 
 export interface ParsedSection {
   id: string;
@@ -23,9 +24,10 @@ const TAG_TYPES: SectionType[] = [
   "Answer",
   "File",
   "RouterGuidance",
+  "Thinking",
 ];
 
-const OPEN_RE = /<(Analyze|Understand|Code|Execute|Answer|File|RouterGuidance)>/g;
+const OPEN_RE = /<(Analyze|Understand|Code|Execute|Answer|File|RouterGuidance|Thinking)>/g;
 
 export function parseSections(content: string): ParsedSection[] {
   const sections: ParsedSection[] = [];
