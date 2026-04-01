@@ -324,27 +324,13 @@ _THEME_INSTRUCTIONS: dict[str, str] = {
         "effects for key metrics cards. Accent color for highlights and CTAs."
     ),
     "literature": (
-        "LITERATURE theme: Elegant, book-inspired design. Serif typography (use Google "
-        "Fonts like 'Playfair Display' for headings, 'Lora' or 'Crimson Text' for body). "
-        "Warm cream/parchment background (#FAF8F2). Generous margins and line-height (1.8+). "
-        "Drop caps for opening paragraphs. Decorative horizontal rules between sections. "
-        "Muted earth-tone accent colors. Think: a beautifully typeset journal article."
+        "FRASURBANE DIGITAL MANUSCRIPT: Warm vintage parchment (#FAF8F2 with ultra-subtle paper-fiber texture overlay) meets muted elegant nostalgic 70s energy. Elegant serif stack: Playfair Display for majestic headings + Lora for body (1.9 line-height, generous margins). Illuminated drop caps with soft ink-spread fade-in animation. Decorative horizontal rules reimagined as glowing golden vine illustrations that subtly bloom on scroll. Earth-tone palette with deep burgundy, antique gold foil, and faint holographic ink accents on data highlights. Marginalia-style footnotes that pop as elegant glass popovers. Feels like a beautifully typeset private journal from a secret library, but with modern micro-animations. Think: dark-academia meets Frasurbane — intimate, scholarly, and enchantingly timeless. You may also use perfect curves or rounded corners if you wish, and make sure that the large starting character of the report is visible."
     ),
     "academic": (
-        "ACADEMIC theme: Formal, research-paper-inspired layout. Clean sans-serif or serif "
-        "fonts (use 'Computer Modern' web font or 'STIX Two Text'). Numbered sections and "
-        "subsections (1.1, 1.2...). Figure captions below images ('Figure 1: ...'). "
-        "Table of contents at top. Abstract/summary box. Footnote-style references. "
-        "Minimal color — mostly black on white with a single accent (navy or forest green). "
-        "Two-column layout for denser sections if appropriate."
+        "BRUTALIST GEOMETRIC RESEARCH LAB: Crisp white canvas with single hyper-bold forest-green accent (#0A3D2A) and Bauhaus geometric precision. Typography: STIX Two Text or Computer Modern for razor-sharp academic authority. Strict modular grid with numbered sections (1.1, 1.2…) in heavy geometric weights. Floating sidebar table of contents. Abstract 3D paper-fold effects and subtle concrete-texture overlays on figure cards. Summary box rendered as a stark, high-contrast brutalist panel. Footnote references appear as clean inline glass tooltips. Data tables and charts use raw alignment with zero decoration — let the geometry speak. Think: 1960s IBM research paper crossed with brutalist web design — rigorous, intellectual, and powerfully unconventional. Make sure that the display text is always visible while reading and when selecting text, regardless of the background you are using."
     ),
     "minimal": (
-        "MINIMAL theme: Maximum whitespace, Swiss/International design principles. "
-        "Monochrome palette — pure black (#000) on white (#fff) with one accent tone. "
-        "Strict grid system. Bold sans-serif headings (use 'Inter' or 'Helvetica Neue'). "
-        "Small body text (14-15px). Generous padding (4rem+ between sections). "
-        "No decorative elements — let typography and spacing do all the work. "
-        "Think: a Dieter Rams product manual meets a design portfolio."
+        "EXTREME BRUTALIST SWISS VOID: Absolute monochrome (#000 on #fff) with one shocking electric-cyan accent that pulses only on interaction. Zero shadows, zero rounded corners — razor-sharp geometric edges and flawless International Typographic grid. Headings in massive bold Inter or Helvetica Neue; body text (15–16px) for pure data clarity. 6rem+ whitespace everywhere. No decorative elements whatsoever — typography and perfect alignment do all the heavy lifting. Data cards are strict floating rectangles with surgical spacing. Think: Dieter Rams product manual meets high-end brutalist portfolio — austere, commanding, and breathtakingly pure. Make sure that if you add any hover effect, the content or images should still be viewable properly."
     ),
     "business": (
         "BUSINESS theme: Executive/corporate report style. Professional navy (#1a365d) "
@@ -506,10 +492,10 @@ prominent, and beautifully framed within the design.
 
         # CONTENT INSTRUCTIONS
         - Read through ALL the analysis content below carefully
-        - Extract the key insights, findings, and conclusions and detailed report with adding your own knowledge
+        - Extract the key insights, findings, and conclusions and detailed report.
         - Filter out debugging noise, error messages, and redundant retry attempts
-        - Structure the report logically: executive summary → key findings →
-          visualizations with interpretation → detailed analysis → conclusions
+        - This is just a high level guidelines, always use your judgement and can structure the report in any way considering the dataset and analysis.
+        - Add your own knowledge and insights to the report to make it detailed and comprehensive.
         - DO NOT include any code snippets or code blocks in the report — this is
           for a non-technical audience. Focus on insights, not implementation.
         - Make data visualizations (embedded images) the CENTERPIECE of the report —

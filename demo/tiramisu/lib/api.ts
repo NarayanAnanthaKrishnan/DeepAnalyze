@@ -96,6 +96,10 @@ export function getPreviewUrl(sessionId: string, path: string): string {
   return `${BACKEND_URL}/workspace/preview?session_id=${sessionId}&path=${encodeURIComponent(path)}`;
 }
 
+export function getDownloadBundleUrl(sessionId: string, category: string = "all"): string {
+  return `${BACKEND_URL}/workspace/download-bundle?session_id=${sessionId}&category=${category}`;
+}
+
 export async function clearWorkspace(sessionId: string): Promise<void> {
   await fetch(`${BACKEND_URL}/workspace/clear?session_id=${sessionId}`, {
     method: "DELETE",

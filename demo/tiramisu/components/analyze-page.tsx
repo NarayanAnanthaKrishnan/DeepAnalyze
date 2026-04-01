@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { useTheme } from "next-themes";
 import {
   ArrowLeft,
@@ -21,6 +21,9 @@ import {
   FileSpreadsheet,
   FileText,
   Sparkles,
+  Package,
+  PanelRightOpen,
+  PanelRightClose,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -40,6 +43,7 @@ import {
   clearWorkspace,
   fetchWorkspaceFiles,
   getDownloadUrl,
+  getDownloadBundleUrl,
   planAnalysis,
   generateHtmlReport,
   type WorkspaceFile,
@@ -72,7 +76,7 @@ export interface SessionSnapshot {
   plan?: string | null;
   planRouterEnabled?: boolean;
   engine?: EngineType;
-  reportStatus?: "idle" | "generating" | "ready" | "error";
+  reportStatus?: "idle" | "generating" | "ready" | "error" | "cancelled";
   reportUrl?: string | null;
 }
 
@@ -171,7 +175,9 @@ export function AnalyzePage({
   const [showScrollBtn, setShowScrollBtn] = useState(false);
 
   // ── Report generation state ──────────────────────────────────────
-  const [reportStatus, setReportStatus] = useState<"idle" | "generating" | "ready" | "error">("idle");
+  const [rightPanelOpen, setRightPanelOpen] = useState(false);
+
+  const [reportStatus, setReportStatus] = useState<"idle" | "generating" | "ready" | "error" | "cancelled">("idle");
   const [reportUrl, setReportUrl] = useState<string | null>(null);
   const [reportError, setReportError] = useState<string | null>(null);
   const reportAbortRef = useRef<AbortController | null>(null);
@@ -194,6 +200,33 @@ export function AnalyzePage({
     }
     return Array.from(seen.values());
   }, [artifacts]);
+
+  // Collect all artifacts from all turns + current live artifacts for the right panel
+  const allArtifacts = useMemo(() => {
+    const seen = new Map<string, WorkspaceFile>();
+    // From completed turns
+    for (const turn of completedTurns) {
+      if (turn.artifacts) {
+        for (const f of turn.artifacts) {
+          const existing = seen.get(f.name);
+          if (!existing || f.path.length < existing.path.length) seen.set(f.name, f);
+        }
+      }
+    }
+    // From current/live artifacts
+    for (const f of dedupedArtifacts) {
+      const existing = seen.get(f.name);
+      if (!existing || f.path.length < existing.path.length) seen.set(f.name, f);
+    }
+    return Array.from(seen.values());
+  }, [completedTurns, dedupedArtifacts]);
+
+  // ── Auto-open right panel when analysis completes ──────────────────
+  useEffect(() => {
+    if (phase === "complete" && allArtifacts.length > 0) {
+      setRightPanelOpen(true);
+    }
+  }, [phase, allArtifacts.length]);
 
   // ── Save snapshot to sessionStorage on completion ──────────────────
   useEffect(() => {
@@ -232,7 +265,8 @@ export function AnalyzePage({
       .catch((err) => {
         if (reportGenIdRef.current !== genId) return;
         if (err instanceof Error && err.name === "AbortError") {
-          setReportStatus("idle");
+          // Don't reset to idle — handleCancelReport already set "cancelled"
+          return;
         } else {
           setReportError(err instanceof Error ? err.message : "Report generation failed");
           setReportStatus("error");
@@ -245,7 +279,7 @@ export function AnalyzePage({
     reportAbortRef.current?.abort();
     reportAbortRef.current = null;
     reportGenIdRef.current++;
-    setReportStatus("idle");
+    setReportStatus("cancelled");
     setReportError(null);
   }, []);
 
@@ -817,9 +851,9 @@ export function AnalyzePage({
          <div className="absolute inset-0 z-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] mix-blend-overlay" />
       </div>
 
-      {/* Extreme Minimal Pinned Header */}
-      <div className="absolute top-3 sm:top-4 inset-x-4 sm:inset-x-8 z-40 pointer-events-none flex justify-between items-start">
-        {/* Top Left Pinned */}
+      {/* Pinned Header — always full-width, never shifts */}
+      <div className="absolute top-3 sm:top-4 left-4 sm:left-8 right-4 sm:right-8 z-40 pointer-events-none flex justify-between items-start">
+        {/* Top Left */}
         <div className="pointer-events-auto flex flex-col gap-1">
           <span className="font-display font-medium text-lg sm:text-2xl tracking-tight text-foreground lowercase leading-none">
             analyze<span className="text-primary font-bold italic tracking-tighter">.</span>
@@ -830,9 +864,9 @@ export function AnalyzePage({
           </div>
         </div>
 
-        {/* Top Right Pinned */}
-        <div className="pointer-events-auto flex items-start gap-4 sm:gap-6">
-           <div className="hidden sm:flex flex-col items-end gap-1.5 mt-1">
+        {/* Top Right */}
+        <div className="pointer-events-auto flex items-center gap-3 sm:gap-4">
+           <div className="hidden sm:flex flex-col items-end gap-1.5">
              <span className="font-mono text-[9px] text-muted-foreground uppercase tracking-[0.2em]">System State</span>
              {phase === "streaming" || phase === "planning" ? (
                <div className="flex items-center gap-2">
@@ -848,13 +882,26 @@ export function AnalyzePage({
                </div>
              )}
            </div>
+           <button
+              onClick={() => setRightPanelOpen((p) => !p)}
+              className="hidden lg:flex items-center justify-center size-8 text-muted-foreground/70 hover:text-foreground transition-all duration-200 border border-border/40 hover:border-primary/40 hover:bg-primary/5 relative"
+              title={rightPanelOpen ? "Hide files panel" : "Show files panel"}
+            >
+              {rightPanelOpen ? <PanelRightClose className="size-4" /> : <PanelRightOpen className="size-4" />}
+              {!rightPanelOpen && allArtifacts.length > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 flex items-center justify-center bg-primary text-primary-foreground font-mono text-[8px] font-bold px-1">{allArtifacts.length}</span>
+              )}
+            </button>
            <ThemeToggle />
         </div>
       </div>
 
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden relative z-10 pt-10 sm:pt-12">
-        
+      {/* Main Layout: Chat + Right Panel */}
+      <div className="flex-1 flex h-full overflow-hidden relative z-10 pt-10 sm:pt-12">
+
+        {/* Left: Chat Area */}
+        <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]">
+
         {/* Scroll area */}
         <div ref={scrollContainerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-3xl px-4 sm:px-8 md:px-12 pb-2">
@@ -956,138 +1003,38 @@ export function AnalyzePage({
             {sectionElements}
           </div>
 
-          {/* Artifacts strip (current/live) */}
-          {phase === "complete" && dedupedArtifacts.length > 0 && renderArtifactsStrip(dedupedArtifacts, "live-")}
+          {/* Artifacts strip (current/live) — shown inline on small screens, right panel on lg */}
+          <div className="lg:hidden">
+            {phase === "complete" && dedupedArtifacts.length > 0 && renderArtifactsStrip(dedupedArtifacts, "live-")}
+          </div>
 
-          {/* ── Report generation indicator ─────────────────────── */}
-          {phase === "complete" && reportStatus === "generating" && (
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-              className="mt-6 mb-2 border border-primary/20 bg-primary/[0.03] p-5 relative overflow-hidden group"
-            >
-              {/* Corner accents */}
-              <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-primary/50" />
-              <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-primary/50" />
-              <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-primary/50" />
-              <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-primary/50" />
-
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
+          {/* Inline report indicators — only on small screens without right panel */}
+          <div className="lg:hidden">
+            {phase === "complete" && reportStatus === "generating" && (
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                className="mt-6 mb-2 border border-primary/20 bg-primary/[0.03] p-5 relative overflow-hidden">
+                <div className="flex items-center gap-3 mb-3">
                   <Sparkles className="size-4 text-primary animate-pulse" />
-                  <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-foreground font-bold">
-                    Generating_Report
-                  </span>
+                  <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-foreground font-bold">Generating_Report</span>
                 </div>
-                <button
-                  onClick={handleCancelReport}
-                  className="flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground hover:text-destructive transition-colors px-2 py-1 border border-transparent hover:border-destructive/30"
-                >
-                  <X className="size-3" />
-                  Cancel
-                </button>
-              </div>
-
-              {/* Animated pulse blocks */}
-              <div className="flex items-center gap-2 mb-3">
-                {[0, 1, 2, 3, 4, 5].map((i) => (
-                  <motion.div
-                    key={i}
-                    className="w-6 h-1.5 bg-primary/40"
-                    animate={{
-                      opacity: [0.2, 1, 0.2],
-                      scaleY: [1, 2, 1],
-                    }}
-                    transition={{
-                      duration: 1.4,
-                      repeat: Infinity,
-                      delay: i * 0.18,
-                      ease: "easeInOut",
-                    }}
-                  />
-                ))}
-                <span className="ml-2 font-mono text-[9px] text-muted-foreground uppercase tracking-wider">
-                  Theme: {reportTheme === "surprise" ? "Surprise me" : reportTheme}
-                </span>
-              </div>
-
-              {/* Animated gradient bar */}
-              <div className="w-full h-[2px] bg-muted/30 overflow-hidden rounded-full">
-                <motion.div
-                  className="h-full bg-gradient-to-r from-primary/0 via-primary to-primary/0"
-                  animate={{ x: ["-100%", "100%"] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                  style={{ width: "60%" }}
-                />
-              </div>
-
-              <p className="font-mono text-[9px] text-muted-foreground/60 mt-3 tracking-wide">
-                Gemini 3.1 Pro is crafting your report — this may take a minute...
-              </p>
-            </motion.div>
-          )}
-
-          {phase === "complete" && reportStatus === "ready" && reportUrl && (
-            <motion.div
-              initial={{ opacity: 0, y: 12, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-              className="mt-6 mb-2"
-            >
-              <button
-                onClick={() => window.open(reportUrl, "_blank")}
-                className="w-full border border-primary/30 bg-primary/[0.04] hover:bg-primary/[0.08] hover:border-primary/50 p-5 relative overflow-hidden group transition-all duration-300 text-left cursor-pointer"
-              >
-                {/* Corner accents */}
-                <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-primary/60 group-hover:border-primary transition-colors" />
-                <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-primary/60 group-hover:border-primary transition-colors" />
-                <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-primary/60 group-hover:border-primary transition-colors" />
-                <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-primary/60 group-hover:border-primary transition-colors" />
-
-                {/* Shine sweep on hover */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-
-                <div className="flex items-center gap-4 relative">
-                  <div className="w-12 h-12 border border-primary/30 bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                    <Sparkles className="size-5 text-primary" />
+                <div className="w-full h-[2px] bg-muted/30 overflow-hidden rounded-full">
+                  <motion.div className="h-full bg-gradient-to-r from-primary/0 via-primary to-primary/0"
+                    animate={{ x: ["-100%", "100%"] }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} style={{ width: "60%" }} />
+                </div>
+              </motion.div>
+            )}
+            {phase === "complete" && reportStatus === "ready" && reportUrl && (
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-6 mb-2">
+                <button onClick={() => window.open(reportUrl, "_blank")}
+                  className="w-full border border-primary/30 bg-primary/[0.04] hover:bg-primary/[0.08] p-4 text-left">
+                  <div className="flex items-center gap-3">
+                    <Sparkles className="size-4 text-primary" />
+                    <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary font-bold">View_Report</span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-primary font-bold mb-1">
-                      View_Report
-                    </div>
-                    <p className="text-[12px] text-muted-foreground font-mono truncate">
-                      HTML report generated — click to open in new tab
-                    </p>
-                  </div>
-                  <ArrowUp className="size-4 text-primary/60 group-hover:text-primary transition-colors rotate-45 flex-shrink-0" />
-                </div>
-              </button>
-            </motion.div>
-          )}
-
-          {phase === "complete" && reportStatus === "error" && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-6 mb-2 border border-destructive/20 bg-destructive/[0.03] p-4"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-destructive/80">Report_Error</span>
-                </div>
-                <button
-                  onClick={handleRetryReport}
-                  className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors px-3 py-1 border border-border/30 hover:border-primary/30"
-                >
-                  Retry
                 </button>
-              </div>
-              {reportError && (
-                <p className="text-[11px] text-muted-foreground mt-2 font-mono truncate">{reportError}</p>
-              )}
-            </motion.div>
-          )}
+              </motion.div>
+            )}
+          </div>
 
           <div className="h-24" />
         </div>
@@ -1162,7 +1109,253 @@ export function AnalyzePage({
           </PromptInput>
         </div>
       </div>
-    </div>
+
+      </div>{/* End left panel */}
+
+      {/* ── Right Panel: Generated Files + Report ────────────────────── */}
+      <AnimatePresence>
+        {rightPanelOpen && (
+          <motion.div
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 340, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+            className="hidden lg:flex flex-col h-full flex-shrink-0 overflow-hidden relative"
+          >
+            {/* Panel inner — fixed width so content doesn't reflow during animation */}
+            <div className="flex flex-col h-full w-[340px] min-w-[340px]">
+
+              {/* Subtle left border glow */}
+              <div className="absolute left-0 top-0 bottom-0 w-px bg-border/40" />
+              <div className="absolute left-0 top-[20%] bottom-[20%] w-px bg-primary/20 blur-[1px]" />
+
+              {/* ── Top: Generated Files ───────────────────────────────── */}
+              <div className="flex-1 flex flex-col min-h-0">
+                {/* Panel Header */}
+                <div className="flex items-center justify-between px-5 py-4 flex-shrink-0">
+                  <div className="flex items-center gap-3">
+                    <div className="w-1.5 h-1.5 bg-primary rotate-45" />
+                    <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-foreground font-semibold">
+                      Generated_Files
+                    </span>
+                    {allArtifacts.length > 0 && (
+                      <span className="font-mono text-[9px] text-muted-foreground/60">{allArtifacts.length}</span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setRightPanelOpen(false)}
+                    className="size-7 flex items-center justify-center text-muted-foreground/50 hover:text-foreground transition-colors"
+                    title="Close panel"
+                  >
+                    <PanelRightClose className="size-3.5" />
+                  </button>
+                </div>
+
+                {/* Divider */}
+                <div className="mx-5 h-px bg-gradient-to-r from-border/60 via-border/30 to-transparent" />
+
+                {/* Download All */}
+                {allArtifacts.length > 0 && (
+                  <div className="px-5 pt-3 pb-2 flex-shrink-0">
+                    <a
+                      href={getDownloadBundleUrl(sessionId)}
+                      className="flex items-center justify-center gap-2.5 w-full py-2.5 border border-primary/20 bg-primary/[0.03] hover:bg-primary/[0.08] hover:border-primary/40 font-mono text-[9px] uppercase tracking-[0.25em] text-primary/70 hover:text-primary transition-all duration-200"
+                    >
+                      <Package className="size-3.5" />
+                      Download All
+                    </a>
+                  </div>
+                )}
+
+                {/* File List */}
+                <div className="flex-1 overflow-y-auto px-4 py-2 scrollbar-thin">
+                  {allArtifacts.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full text-center px-6 pb-12">
+                      <div className="size-12 border border-dashed border-border/30 flex items-center justify-center mb-4">
+                        <FileText className="size-5 text-muted-foreground/20" />
+                      </div>
+                      <p className="font-mono text-[9px] text-muted-foreground/40 uppercase tracking-[0.2em] leading-relaxed">
+                        {phase === "streaming" ? "Generating..." : "No files yet"}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-1.5">
+                      {allArtifacts.map((file, i) => {
+                        const Icon = getFileIcon(file.name);
+                        const url = getDownloadUrl(sessionId, file.path);
+                        const isImage = [".png", ".jpg", ".jpeg", ".gif", ".webp"].some((ext) => file.name.endsWith(ext));
+                        return (
+                          <motion.a
+                            key={`rp-${file.name}`}
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.04, duration: 0.3, ease: "easeOut" }}
+                            className="group relative"
+                          >
+                            {isImage && (
+                              <div className="w-full aspect-[2/1] mb-0 overflow-hidden border border-border/30 bg-muted/30">
+                                <img
+                                  src={url}
+                                  alt={file.name}
+                                  className="w-full h-full object-cover opacity-70 grayscale-[0.3] group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-500"
+                                />
+                              </div>
+                            )}
+                            <div className={cn(
+                              "flex items-center gap-3 px-3 py-2.5 border border-border/30 bg-background/30 hover:bg-primary/[0.04] hover:border-primary/25 transition-all duration-200",
+                              isImage && "border-t-0"
+                            )}>
+                              <Icon className="size-4 text-muted-foreground/40 group-hover:text-primary/60 transition-colors flex-shrink-0" />
+                              <div className="flex flex-col overflow-hidden flex-1 min-w-0">
+                                <p className="text-[11px] font-mono font-medium truncate text-foreground/80 group-hover:text-primary transition-colors">
+                                  {file.name}
+                                </p>
+                                {file.size > 0 && (
+                                  <p className="text-[8px] font-mono text-muted-foreground/40 mt-0.5">
+                                    {file.size < 1024 ? `${file.size} B` : `${(file.size / 1024).toFixed(1)} KB`}
+                                  </p>
+                                )}
+                              </div>
+                              <Download className="size-3 text-muted-foreground/20 group-hover:text-primary/50 transition-colors flex-shrink-0" />
+                            </div>
+                          </motion.a>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* ── Bottom: Report Section ─────────────────────────────── */}
+              <div className="flex-shrink-0">
+                {/* Divider */}
+                <div className="mx-5 h-px bg-gradient-to-r from-border/60 via-border/30 to-transparent" />
+
+                {/* Report: Generating */}
+                {reportStatus === "generating" && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="px-5 py-4"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2.5">
+                        <motion.div
+                          animate={{ rotate: [0, 180, 360] }}
+                          transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                        >
+                          <Sparkles className="size-3.5 text-primary" />
+                        </motion.div>
+                        <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-foreground font-bold">
+                          Report
+                        </span>
+                      </div>
+                      <button
+                        onClick={handleCancelReport}
+                        className="font-mono text-[8px] uppercase tracking-[0.2em] text-muted-foreground/50 hover:text-destructive transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="w-full h-[3px] bg-muted/20 overflow-hidden mb-2.5">
+                      <motion.div
+                        className="h-full bg-gradient-to-r from-primary/0 via-primary/80 to-primary/0"
+                        animate={{ x: ["-100%", "100%"] }}
+                        transition={{ duration: 1.8, repeat: Infinity, ease: "linear" }}
+                        style={{ width: "50%" }}
+                      />
+                    </div>
+
+                    <p className="font-mono text-[8px] text-muted-foreground/40 tracking-wider">
+                      Crafting with Gemini 3.1 Pro...
+                    </p>
+                  </motion.div>
+                )}
+
+                {/* Report: Ready */}
+                {reportStatus === "ready" && reportUrl && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <button
+                      onClick={() => window.open(reportUrl, "_blank")}
+                      className="w-full px-5 py-4 text-left cursor-pointer group relative overflow-hidden hover:bg-primary/[0.03] transition-all duration-300"
+                    >
+                      {/* Shine sweep */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/[0.03] to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+
+                      <div className="flex items-center gap-3 relative">
+                        <div className="size-9 border border-primary/30 bg-primary/[0.08] flex items-center justify-center group-hover:bg-primary/15 transition-colors">
+                          <Sparkles className="size-4 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-mono text-[9px] uppercase tracking-[0.25em] text-primary font-bold mb-0.5">
+                            View Report
+                          </div>
+                          <p className="text-[9px] text-muted-foreground/50 font-mono">
+                            Open in new tab
+                          </p>
+                        </div>
+                        <ArrowUp className="size-3.5 text-primary/40 group-hover:text-primary group-hover:-translate-y-0.5 transition-all duration-200 rotate-45 flex-shrink-0" />
+                      </div>
+                    </button>
+                  </motion.div>
+                )}
+
+                {/* Report: Error */}
+                {reportStatus === "error" && (
+                  <div className="px-5 py-4">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-destructive/70">Error</span>
+                      <button
+                        onClick={handleRetryReport}
+                        className="font-mono text-[8px] uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                    {reportError && (
+                      <p className="text-[9px] text-muted-foreground/50 mt-1.5 font-mono truncate">{reportError}</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Report: Cancelled */}
+                {reportStatus === "cancelled" && (
+                  <div className="px-5 py-4">
+                    <button
+                      onClick={handleRetryReport}
+                      className="flex items-center justify-center gap-2.5 w-full py-2.5 border border-border/30 bg-muted/[0.03] hover:bg-primary/[0.05] hover:border-primary/25 font-mono text-[9px] uppercase tracking-[0.25em] text-muted-foreground/60 hover:text-primary transition-all duration-200"
+                    >
+                      <Sparkles className="size-3" />
+                      Generate Report
+                    </button>
+                  </div>
+                )}
+
+                {/* Report: Idle / pending */}
+                {reportStatus === "idle" && phase !== "complete" && (
+                  <div className="px-5 py-4">
+                    <div className="flex items-center gap-2.5 text-muted-foreground/30">
+                      <Sparkles className="size-3" />
+                      <span className="font-mono text-[8px] uppercase tracking-[0.25em]">Report pending</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+    </div>{/* End main layout */}
   </div>
   );
 }
