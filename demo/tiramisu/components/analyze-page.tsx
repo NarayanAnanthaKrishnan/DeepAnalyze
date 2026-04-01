@@ -1403,12 +1403,7 @@ export function AnalyzePage({
                       >
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2.5">
-                            <motion.div
-                              animate={{ rotate: [0, 180, 360] }}
-                              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                            >
-                              <Sparkles className="size-3.5 text-primary" />
-                            </motion.div>
+                            <Sparkles className="size-3.5 text-primary" />
                             <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-foreground font-bold">
                               Report
                             </span>
