@@ -25,7 +25,7 @@ log = logging.getLogger(__name__)
 GEMINI_API_URL = (
     "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 )
-GEMINI_REPORT_MODEL = "gemini-2.5-flash"
+GEMINI_REPORT_MODEL = "gemini-3.1-pro-preview"
 _MAX_REPORT_IMAGES = 20
 
 
@@ -541,9 +541,9 @@ async def _call_gemini_report(
     payload: dict[str, Any] = {
         "contents": [{"parts": parts}],
         "generationConfig": {
-            "temperature": 0.7,
-            "maxOutputTokens": 32768,
-            "thinkingConfig": {"thinkingLevel": "low"},
+            "temperature": 1,
+            "maxOutputTokens": 65536,
+            "thinkingConfig": {"thinkingLevel": "medium"},
         },
     }
 

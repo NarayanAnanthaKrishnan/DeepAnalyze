@@ -1100,12 +1100,12 @@ export function AnalyzePage({
             )}
           </div>
 
-          <div className="h-24" />
+          <div className="h-4" />
         </div>
       </div>
 
       {/* Bottom chat bar */}
-      <div className="sticky bottom-0 z-50 bg-background/60 backdrop-blur-xl px-4 py-4 sm:py-6 relative">
+      <div className="sticky bottom-0 z-50 bg-background/60 backdrop-blur-xl px-4 py-1.5 sm:py-2 relative">
         {/* Glowing Pedestal Line */}
         <div className="absolute inset-x-0 top-0 flex justify-center pointer-events-none">
           <div className="w-[80%] max-w-2xl h-[1px] bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
@@ -1146,8 +1146,8 @@ export function AnalyzePage({
                 ))}
               </div>
             )}
-            <PromptInputTextarea placeholder={phase === "streaming" ? "Analyzing status..." : "Continue the session..."} className="text-sm font-medium tracking-wide dark:bg-transparent min-h-[44px] px-3 pt-3" />
-            <PromptInputActions className="flex items-center justify-between gap-2 px-2 pb-1.5 pt-2">
+            <PromptInputTextarea placeholder={phase === "streaming" ? "Analyzing status..." : "Continue the session..."} className="text-sm font-medium tracking-wide dark:bg-transparent min-h-[40px] px-3 pt-2.5" />
+            <PromptInputActions className="flex items-center justify-between gap-2 px-2 pb-1.5 pt-1.5">
               <div className="flex items-center gap-1">
                 <PromptInputAction tooltip="Attach files">
                   <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none border border-transparent hover:border-primary/30 hover:bg-primary/10 transition-colors"
@@ -1192,30 +1192,72 @@ export function AnalyzePage({
                   </PopoverContent>
                 </Popover>
 
-                {/* Report: Regenerate / Cancel — labeled pill buttons */}
-                {phase === "complete" && reportStatus !== "generating" && (
-                  <button
-                    className="flex items-center gap-1.5 h-7 px-2.5 border border-primary/20 bg-primary/[0.03] hover:bg-primary/[0.08] hover:border-primary/40 transition-all duration-200 group"
-                    title="Regenerate report with current theme"
-                    onClick={(e) => { e.stopPropagation(); handleRegenerateReport(); }}>
-                    <FileText className="size-3 text-primary/50 group-hover:text-primary transition-colors" />
-                    <span className="font-mono text-[8px] uppercase tracking-[0.2em] text-primary/60 group-hover:text-primary transition-colors font-semibold">
-                      Report
-                    </span>
-                  </button>
-                )}
-                {reportStatus === "generating" && (
-                  <button
-                    className="flex items-center gap-1.5 h-7 px-2.5 border border-primary/25 bg-primary/[0.05] hover:border-destructive/40 hover:bg-destructive/[0.06] transition-all duration-200 group relative overflow-hidden"
-                    title="Cancel report generation"
-                    onClick={(e) => { e.stopPropagation(); handleCancelReport(); }}>
-                    <Loader2 className="size-3 text-primary/60 animate-spin group-hover:hidden" />
-                    <Square className="size-2.5 text-destructive/70 hidden group-hover:block" />
-                    <span className="font-mono text-[8px] uppercase tracking-[0.2em] text-primary/60 group-hover:text-destructive/80 transition-colors font-semibold">
-                      <span className="group-hover:hidden">Report...</span>
-                      <span className="hidden group-hover:inline">Stop</span>
-                    </span>
-                  </button>
+                {/* Clever Status Shutter Pill */}
+                {phase === "complete" && (
+                  <div className="relative h-7 overflow-hidden">
+                    <AnimatePresence mode="wait">
+                      {reportStatus !== "generating" ? (
+                        <motion.button
+                          key="idle"
+                          initial={{ y: 10, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          exit={{ y: -10, opacity: 0 }}
+                          className="flex items-center gap-1.5 h-7 px-2.5 border border-primary/20 bg-primary/[0.03] hover:bg-primary/[0.08] hover:border-primary/40 transition-all duration-200 group relative"
+                          onClick={(e) => { e.stopPropagation(); handleRegenerateReport(); }}
+                        >
+                          <FileText className="size-3 text-primary/50 group-hover:text-primary transition-colors" />
+                          <span className="font-mono text-[8px] uppercase tracking-[0.2em] text-primary/60 group-hover:text-primary transition-colors font-semibold">
+                            Report
+                          </span>
+                        </motion.button>
+                      ) : (
+                        <motion.button
+                          key="generating"
+                          initial={{ y: 10, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          exit={{ y: -10, opacity: 0 }}
+                          onClick={(e) => { e.stopPropagation(); handleCancelReport(); }}
+                          className="group relative flex items-center h-7 border border-primary/30 bg-primary/5 overflow-hidden transition-all duration-300 hover:border-destructive/40 hover:bg-destructive/5"
+                        >
+                          {/* Inner Shutter Container */}
+                          <div className="flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:-translate-y-7">
+                            {/* State 1: Synthesizing */}
+                            <div className="flex items-center gap-2 px-2.5 h-7">
+                              <div className="flex gap-0.5 items-end h-2">
+                                {[0.4, 0.7, 0.3].map((h, i) => (
+                                  <motion.div
+                                    key={i}
+                                    className="w-0.5 bg-primary/60"
+                                    animate={{ height: ["20%", "100%", "20%"] }}
+                                    transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+                                  />
+                                ))}
+                              </div>
+                              <span className="font-mono text-[8px] uppercase tracking-[0.2em] text-primary/70 font-bold whitespace-nowrap">
+                                Synthesizing
+                              </span>
+                            </div>
+                            
+                            {/* State 2: Stop (Shutter Down) */}
+                            <div className="flex items-center gap-2 px-2.5 h-7 bg-destructive/10">
+                              <Square className="size-2.5 text-destructive fill-destructive/20" />
+                              <span className="font-mono text-[8px] uppercase tracking-[0.2em] text-destructive font-bold whitespace-nowrap">
+                                Stop Analysis
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Minimal Progress Underlay */}
+                          <motion.div 
+                            className="absolute bottom-0 left-0 h-[1px] bg-primary/40 group-hover:bg-destructive/40"
+                            initial={{ width: "0%" }}
+                            animate={{ width: "100%" }}
+                            transition={{ duration: 15, ease: "linear" }}
+                          />
+                        </motion.button>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 )}
 
                 <PromptInputAction tooltip="Clear workspace & restart">
