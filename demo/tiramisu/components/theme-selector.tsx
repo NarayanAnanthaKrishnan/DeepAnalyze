@@ -10,11 +10,9 @@ import { Palette, Check, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const REPORT_THEMES = [
-  { id: "modern", label: "Modern" },
   { id: "literature", label: "Literature" },
   { id: "academic", label: "Academic" },
-  { id: "minimal", label: "Minimal" },
-  { id: "business", label: "Business" },
+  { id: "aura", label: "Aura" },
   { id: "surprise", label: "Surprise me" },
 ] as const;
 
@@ -32,7 +30,7 @@ export function ThemeSelector({ value, onValueChange }: ThemeSelectorProps) {
       <PopoverTrigger asChild>
         <button
           className="group flex size-10 sm:size-11 items-center justify-center rounded-none bg-secondary/30 transition-all hover:bg-secondary/60 border border-border/20 hover:border-border/50 flex-shrink-0"
-          title={`Report Theme: ${current.label}`}
+          title={`Aesthetic: ${current.label}`}
           onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
         >
           <Palette className="size-4 sm:size-4.5 text-primary group-hover:scale-110 transition-transform" />
@@ -45,7 +43,7 @@ export function ThemeSelector({ value, onValueChange }: ThemeSelectorProps) {
         onClick={(e) => e.stopPropagation()}
       >
         <p className="px-3 pb-2 pt-1 font-mono text-[9px] uppercase tracking-[0.25em] text-muted-foreground/80 border-b border-border/30 mb-1">
-          Select_Theme
+          Pick_Aesthetic
         </p>
         <div className="space-y-0.5">
           {REPORT_THEMES.map((t) => {

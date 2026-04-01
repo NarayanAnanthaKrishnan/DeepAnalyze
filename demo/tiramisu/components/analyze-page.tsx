@@ -122,11 +122,9 @@ const SECTION_META: Record<SectionType, { label: string; color: string }> = {
 };
 
 const REPORT_THEMES = [
-  { id: "modern", label: "Modern" },
   { id: "literature", label: "Literature" },
   { id: "academic", label: "Academic" },
-  { id: "minimal", label: "Minimal" },
-  { id: "business", label: "Business" },
+  { id: "aura", label: "Aura" },
   { id: "surprise", label: "Surprise me" },
 ] as const;
 
@@ -465,7 +463,7 @@ export function AnalyzePage({
       // Re-fetch artifacts from backend (workspace is still intact)
       fetchWorkspaceFiles(sessionId).then((ws) => {
         setArtifacts(ws.filter((f) => f.is_generated));
-      }).catch(() => {});
+      }).catch(() => { });
       return;
     }
 
@@ -721,13 +719,13 @@ export function AnalyzePage({
   const renderAttachedOutput = (section: ParsedSection) => (
     <div className="mt-2 text-sm">
       <div className="flex items-center gap-2">
-         <div className="w-2 h-2 border border-primary/40" />
-         <span className="text-[9px] font-mono text-primary/60 uppercase tracking-widest font-semibold">Execution Output</span>
+        <div className="w-2 h-2 border border-primary/40" />
+        <span className="text-[9px] font-mono text-primary/60 uppercase tracking-widest font-semibold">Execution Output</span>
       </div>
       <div className="mt-2 border border-primary/20 bg-primary/5 p-4 rounded-none shadow-inner overflow-x-auto relative">
-         <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-primary opacity-20" />
-         <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-primary opacity-20" />
-         <pre className="font-mono text-[13px] leading-[1.65] text-foreground/85 whitespace-pre-wrap">{section.content}</pre>
+        <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-primary opacity-20" />
+        <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-primary opacity-20" />
+        <pre className="font-mono text-[13px] leading-[1.65] text-foreground/85 whitespace-pre-wrap">{section.content}</pre>
       </div>
     </div>
   );
@@ -863,8 +861,8 @@ export function AnalyzePage({
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="mt-10 mb-6 w-full">
         <div className="flex items-center justify-between mb-4 border-b border-border/40 pb-2">
           <div className="flex items-center gap-3">
-             <div className="w-1.5 h-1.5 bg-primary/80 rotate-45" />
-             <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.2em] text-foreground font-semibold">Artifacts_Generated</span>
+            <div className="w-1.5 h-1.5 bg-primary/80 rotate-45" />
+            <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.2em] text-foreground font-semibold">Artifacts_Generated</span>
           </div>
           <span className="font-mono text-[9px] text-muted-foreground mr-1">[{deduped.length}]</span>
         </div>
@@ -908,12 +906,12 @@ export function AnalyzePage({
   // ─── Render ───────────────────────────────────────────────────────
   return (
     <div className="flex flex-col h-[100dvh] w-full bg-background overflow-hidden relative">
-      
+
       {/* Background Ambience */}
       <div className="fixed inset-0 z-0 pointer-events-none">
-         <div className="absolute top-[10%] left-[10%] w-[60vw] h-[60vw] md:w-[40vw] md:h-[40vw] bg-primary/10 rounded-full blur-[80px] md:blur-[120px] mix-blend-normal" />
-         <div className="absolute bottom-[-10%] right-[-10%] w-[70vw] h-[50vw] bg-[#E5A84B]/10 dark:bg-[#F5C76A]/10 rounded-full blur-[100px] md:blur-[140px]" />
-         <div className="absolute inset-0 z-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] mix-blend-overlay" />
+        <div className="absolute top-[10%] left-[10%] w-[60vw] h-[60vw] md:w-[40vw] md:h-[40vw] bg-primary/10 rounded-full blur-[80px] md:blur-[120px] mix-blend-normal" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[70vw] h-[50vw] bg-[#E5A84B]/10 dark:bg-[#F5C76A]/10 rounded-full blur-[100px] md:blur-[140px]" />
+        <div className="absolute inset-0 z-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] mix-blend-overlay" />
       </div>
 
       {/* Main Layout: Chat + Right Panel */}
@@ -930,33 +928,33 @@ export function AnalyzePage({
 
           {/* Top Right */}
           <div className="flex items-center gap-0.5 sm:gap-1">
-             <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 border border-border/20 bg-background/40">
-               <span className="font-mono text-[9px] text-muted-foreground/60 uppercase tracking-[0.1em] h-2.5 flex items-center">Status</span>
-               {phase === "streaming" || phase === "planning" ? (
-                 <div className="flex items-center gap-1.5 min-w-[65px]">
-                   <div className="w-1 h-1 bg-primary rounded-none animate-ping" />
-                   <span className="font-mono text-[9px] text-primary uppercase tracking-[0.1em] font-bold">
-                     {phase === "planning" ? "Planning" : "Synthesizing"}
-                   </span>
-                 </div>
-               ) : (
-                 <div className="flex items-center gap-1.5 min-w-[65px]">
-                   <div className="w-1 h-1 bg-border rounded-none" />
-                   <span className="font-mono text-[9px] text-muted-foreground/60 uppercase tracking-[0.1em]">Idle</span>
-                 </div>
-               )}
-             </div>
-             <button
-                onClick={() => setRightPanelOpen((p) => !p)}
-                className="hidden lg:flex items-center justify-center size-8 text-muted-foreground/70 hover:text-foreground transition-all duration-200 border border-border/20 hover:border-primary/40 hover:bg-primary/5 relative"
-                title={rightPanelOpen ? "Hide files panel" : "Show files panel"}
-              >
-                {rightPanelOpen ? <PanelRightClose className="size-4" /> : <PanelRightOpen className="size-4" />}
-                {!rightPanelOpen && allArtifacts.length > 0 && (
-                  <div className="absolute top-1.5 right-1.5 w-1 h-1 bg-primary rounded-full shadow-[0_0_4px_rgba(var(--primary),0.5)]" />
-                )}
-              </button>
-             <ThemeToggle />
+            <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 border border-border/20 bg-background/40">
+              <span className="font-mono text-[9px] text-muted-foreground/60 uppercase tracking-[0.1em] h-2.5 flex items-center">Status</span>
+              {phase === "streaming" || phase === "planning" ? (
+                <div className="flex items-center gap-1.5 min-w-[65px]">
+                  <div className="w-1 h-1 bg-primary rounded-none animate-ping" />
+                  <span className="font-mono text-[9px] text-primary uppercase tracking-[0.1em] font-bold">
+                    {phase === "planning" ? "Planning" : "Synthesizing"}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 min-w-[65px]">
+                  <div className="w-1 h-1 bg-border rounded-none" />
+                  <span className="font-mono text-[9px] text-muted-foreground/60 uppercase tracking-[0.1em]">Idle</span>
+                </div>
+              )}
+            </div>
+            <button
+              onClick={() => setRightPanelOpen((p) => !p)}
+              className="hidden lg:flex items-center justify-center size-8 text-muted-foreground/70 hover:text-foreground transition-all duration-200 border border-border/20 hover:border-primary/40 hover:bg-primary/5 relative"
+              title={rightPanelOpen ? "Hide files panel" : "Show files panel"}
+            >
+              {rightPanelOpen ? <PanelRightClose className="size-4" /> : <PanelRightOpen className="size-4" />}
+              {!rightPanelOpen && allArtifacts.length > 0 && (
+                <div className="absolute top-1.5 right-1.5 w-1 h-1 bg-primary rounded-full shadow-[0_0_4px_rgba(var(--primary),0.5)]" />
+              )}
+            </button>
+            <ThemeToggle />
           </div>
         </div>
 
@@ -965,560 +963,560 @@ export function AnalyzePage({
           {/* Left: Chat Area */}
           <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]">
 
-        {/* Scroll area */}
-        <div ref={scrollContainerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-3xl px-4 sm:px-8 md:px-12 pb-0">
+            {/* Scroll area */}
+            <div ref={scrollContainerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto">
+              <div className="mx-auto max-w-3xl px-4 sm:px-8 md:px-12 pb-0">
 
-          {renderUserBubble(prompt, files.map((f) => f.name), "initial")}
+                {renderUserBubble(prompt, files.map((f) => f.name), "initial")}
 
 
-          {phase === "uploading" && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-3 py-10">
-              <Loader2 className="size-5 text-primary animate-spin" />
-              <TextShimmer className="text-[16px] font-display">Uploading {files.length} file{files.length > 1 ? "s" : ""}...</TextShimmer>
-              <div className="w-36 h-px rounded-full bg-muted overflow-hidden">
-                <motion.div className="h-full bg-primary rounded-full" initial={{ width: "0%" }} animate={{ width: `${uploadProgress}%` }} />
-              </div>
-            </motion.div>
-          )}
-
-          {phase === "planning" && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-3 py-10">
-              <Loader2 className="size-5 text-primary animate-spin" />
-              <TextShimmer className="text-[16px] font-display">Planning analysis...</TextShimmer>
-              <p className="text-xs text-muted-foreground max-w-sm text-center">
-                Profiling your data and building an analysis strategy
-              </p>
-            </motion.div>
-          )}
-
-          {plan && (phase === "streaming" || phase === "complete") && (
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-              <details className="group border border-primary/10 bg-primary/[0.02] overflow-hidden">
-                <summary className="cursor-pointer px-4 py-2.5 flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
-                  <span className="size-1.5 bg-primary/60 rotate-45" />
-                  Analysis Plan
-                  <span className="ml-auto text-[10px] opacity-50">click to expand</span>
-                </summary>
-                <div className="px-4 pb-4 pt-1 text-sm text-muted-foreground prose prose-sm dark:prose-invert max-w-none">
-                  <Markdown components={{
-                    code: ({ children }) => (
-                      <code className="bg-primary-foreground rounded-sm px-1 font-mono text-sm">{children}</code>
-                    ),
-                    pre: ({ children }) => (
-                      <pre className="bg-primary-foreground/50 rounded-md px-3 py-2 font-mono text-xs whitespace-pre-wrap overflow-x-auto">{children}</pre>
-                    ),
-                  }}>{plan}</Markdown>
-                </div>
-              </details>
-            </motion.div>
-          )}
-
-          {phase === "error" && (
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-              className="rounded-xl border border-destructive/20 bg-destructive/5 p-5 text-center space-y-2">
-              <p className="text-sm text-destructive font-medium">{errorMessage}</p>
-              <p className="text-xs text-muted-foreground">Backend at <code className="px-1 py-0.5 rounded bg-muted font-mono text-[11px]">localhost:8200</code></p>
-              <div className="flex items-center justify-center gap-2 pt-1">
-                <Button variant="outline" size="sm" onClick={() => router.push("/")} className="rounded-full text-xs h-7">Back</Button>
-                <Button variant="default" size="sm" onClick={() => window.location.reload()} className="rounded-full text-xs h-7">Retry</Button>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Completed conversation turns (previous assistant responses + follow-up user messages) */}
-          {completedTurns.map((turn, i) => {
-            if (turn.role === "assistant") {
-              const turnSections = parseSections(turn.content);
-              const turnPreTag = getPreTagContent(turn.content);
-              return (
-                <div key={`turn-${i}`}>
-                  {turnPreTag && (
-                    <div className="text-[16px] leading-[1.75] text-muted-foreground whitespace-pre-wrap mt-2 mb-4">{turnPreTag}</div>
-                  )}
-                  <div className="sections-timeline">
-                    {buildSectionElements(turnSections, `t${i}-`)}
-                  </div>
-                  {turn.artifacts && turn.artifacts.length > 0 && renderArtifactsStrip(turn.artifacts, `t${i}-`)}
-                </div>
-              );
-            }
-            // User turn
-            return (
-              <div key={`turn-${i}`} className="mt-6">
-                {renderUserBubble(turn.content, turn.fileNames || [], `followup-${i}`)}
-              </div>
-            );
-          })}
-
-          {/* Current live stream */}
-          {preTagContent && (phase === "streaming" || phase === "complete") && (
-            <div className="text-[16px] leading-[1.75] text-muted-foreground whitespace-pre-wrap mt-2 mb-4">{preTagContent}</div>
-          )}
-
-          {phase === "streaming" && sections.length === 0 && !preTagContent && (
-            <div className="flex items-center justify-center py-8">
-              <TextShimmer className="text-[16px] font-display">Thinking...</TextShimmer>
-            </div>
-          )}
-
-          {/* Timeline spine + sections (current/live) */}
-          <div className="sections-timeline">
-            {sectionElements}
-          </div>
-
-          {/* Artifacts strip (current/live) — shown inline on small screens, right panel on lg */}
-          <div className="lg:hidden">
-            {phase === "complete" && dedupedArtifacts.length > 0 && renderArtifactsStrip(dedupedArtifacts, "live-")}
-          </div>
-
-          {/* Inline report indicators — only on small screens without right panel */}
-          <div className="lg:hidden">
-            {phase === "complete" && reportStatus === "generating" && (
-              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                className="mt-6 mb-2 border border-primary/20 bg-primary/[0.03] p-5 relative overflow-hidden">
-                <div className="flex items-center gap-3 mb-3">
-                  <Sparkles className="size-4 text-primary animate-pulse" />
-                  <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-foreground font-bold">Generating_Report</span>
-                </div>
-                <div className="w-full h-[2px] bg-muted/30 overflow-hidden rounded-full">
-                  <motion.div className="h-full bg-gradient-to-r from-primary/0 via-primary to-primary/0"
-                    animate={{ x: ["-100%", "100%"] }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} style={{ width: "60%" }} />
-                </div>
-              </motion.div>
-            )}
-            {phase === "complete" && reportStatus === "ready" && reportUrl && (
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-6 mb-2">
-                <button onClick={() => window.open(reportUrl, "_blank")}
-                  className="w-full border border-primary/30 bg-primary/[0.04] hover:bg-primary/[0.08] p-4 text-left">
-                  <div className="flex items-center gap-3">
-                    <Sparkles className="size-4 text-primary" />
-                    <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary font-bold">View_Report</span>
-                  </div>
-                </button>
-              </motion.div>
-            )}
-          </div>
-
-          <div className="h-4" />
-        </div>
-      </div>
-
-      {/* Bottom chat bar */}
-      <div className="sticky bottom-0 z-50 bg-background/60 backdrop-blur-xl px-4 py-1.5 sm:py-2 relative">
-        {/* Glowing Pedestal Line */}
-        <div className="absolute inset-x-0 top-0 flex justify-center pointer-events-none">
-          <div className="w-[80%] max-w-2xl h-[1px] bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[60%] max-w-xl h-12 bg-primary/10 blur-2xl" />
-        </div>
-        <div className="mx-auto max-w-3xl relative z-10">
-          {/* Scroll to bottom — floats above the prompt input */}
-          <div className={cn(
-            "absolute -top-10 left-1/2 -translate-x-1/2 transition-all duration-200",
-            showScrollBtn ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-2 pointer-events-none"
-          )}>
-            <button
-              onClick={scrollToBottom}
-              className="inline-flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-widest text-primary/70 hover:text-primary bg-background/90 border border-primary/20 hover:border-primary/50 px-4 py-1.5 shadow-sm backdrop-blur-sm transition-colors"
-            >
-              <ArrowDown className="size-3" />
-              Scroll
-            </button>
-          </div>
-          <input ref={followUpFileInputRef} type="file" multiple className="hidden" onChange={handleFollowUpFileChange} />
-          <PromptInput value={followUpInput} onValueChange={setFollowUpInput}
-            isLoading={phase === "streaming"} onSubmit={phase === "streaming" ? handleStop : handleSendFollowUp}
-            disabled={phase === "uploading"} className="!rounded-none border border-primary/20 bg-primary/5 backdrop-blur-md shadow-2xl shadow-primary/10 relative group transition-colors hover:border-primary/40 focus-within:border-primary/60">
-
-            <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-primary opacity-50 group-hover:opacity-100 transition-opacity pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-primary opacity-50 group-hover:opacity-100 transition-opacity pointer-events-none" />
-
-            {followUpFiles.length > 0 && (
-              <div className="flex flex-wrap gap-2 px-3 pt-3">
-                {followUpFiles.map((file, i) => (
-                  <div key={i} className="flex items-center gap-1.5 border border-primary/20 bg-background/50 px-2 py-1 text-[11px] font-mono shadow-sm">
-                    <Paperclip className="size-3 text-primary/70" />
-                    <span className="max-w-[120px] truncate">{file.name}</span>
-                    <button onClick={() => setFollowUpFiles((prev) => prev.filter((_, j) => j !== i))} className="hover:text-destructive text-muted-foreground ml-1">
-                      <X className="size-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-            <PromptInputTextarea placeholder={phase === "streaming" ? "Analyzing status..." : "Continue the session..."} className="text-sm font-medium tracking-wide dark:bg-transparent min-h-[40px] px-3 pt-2.5" />
-            <PromptInputActions className="flex items-center justify-between gap-2 px-2 pb-1.5 pt-1.5">
-              <div className="flex items-center gap-1">
-                <PromptInputAction tooltip="Attach files">
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none border border-transparent hover:border-primary/30 hover:bg-primary/10 transition-colors"
-                    onClick={(e) => { e.stopPropagation(); followUpFileInputRef.current?.click(); }}>
-                    <Paperclip className="size-4 text-primary/70 hover:text-primary transition-colors" />
-                  </Button>
-                </PromptInputAction>
-
-                {/* Theme selector */}
-                <Popover open={themePopoverOpen} onOpenChange={setThemePopoverOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none border border-transparent hover:border-primary/30 hover:bg-primary/10 transition-colors"
-                      title={`Theme: ${REPORT_THEMES.find(t => t.id === reportTheme)?.label ?? reportTheme}`}
-                      onClick={(e) => e.stopPropagation()}>
-                      <Palette className="size-4 text-primary/70 hover:text-primary transition-colors" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    className="w-44 rounded-none border border-border bg-popover p-1.5 shadow-xl"
-                    align="start" side="top"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <p className="px-3 pb-2 pt-1 font-mono text-[8px] uppercase tracking-[0.25em] text-muted-foreground/70 border-b border-border/30 mb-1">
-                      Report Theme
-                    </p>
-                    {REPORT_THEMES.map((t) => (
-                      <button
-                        key={t.id}
-                        onClick={() => { setReportTheme(t.id); setThemePopoverOpen(false); }}
-                        className={cn(
-                          "flex w-full items-center justify-between px-3 py-1.5 text-[11px] font-mono uppercase tracking-wider transition-colors hover:bg-accent hover:text-accent-foreground border-l-2 border-transparent hover:border-primary",
-                          t.id === reportTheme && "bg-accent/50 text-accent-foreground border-primary"
-                        )}
-                      >
-                        <span className="flex items-center gap-1.5">
-                          {t.label}
-                          {t.id === "surprise" && <Sparkles className="size-2.5 text-primary/70" />}
-                        </span>
-                        {t.id === reportTheme && <Check className="size-3 text-muted-foreground" />}
-                      </button>
-                    ))}
-                  </PopoverContent>
-                </Popover>
-
-                {/* Clever Status Shutter Pill */}
-                {phase === "complete" && (
-                  <div className="relative h-7 overflow-hidden">
-                    <AnimatePresence mode="wait">
-                      {reportStatus !== "generating" ? (
-                        <motion.button
-                          key="idle"
-                          initial={{ y: 10, opacity: 0 }}
-                          animate={{ y: 0, opacity: 1 }}
-                          exit={{ y: -10, opacity: 0 }}
-                          className="flex items-center gap-1.5 h-7 px-2.5 border border-primary/20 bg-primary/[0.03] hover:bg-primary/[0.08] hover:border-primary/40 transition-all duration-200 group relative"
-                          onClick={(e) => { e.stopPropagation(); handleRegenerateReport(); }}
-                        >
-                          <FileText className="size-3 text-primary/50 group-hover:text-primary transition-colors" />
-                          <span className="font-mono text-[8px] uppercase tracking-[0.2em] text-primary/60 group-hover:text-primary transition-colors font-semibold">
-                            Report
-                          </span>
-                        </motion.button>
-                      ) : (
-                        <motion.button
-                          key="generating"
-                          initial={{ y: 10, opacity: 0 }}
-                          animate={{ y: 0, opacity: 1 }}
-                          exit={{ y: -10, opacity: 0 }}
-                          onClick={(e) => { e.stopPropagation(); handleCancelReport(); }}
-                          className="group relative flex items-center h-7 border border-primary/30 bg-primary/5 overflow-hidden transition-all duration-300 hover:border-destructive/40 hover:bg-destructive/5"
-                        >
-                          {/* Inner Shutter Container */}
-                          <div className="flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:-translate-y-7">
-                            {/* State 1: Synthesizing */}
-                            <div className="flex items-center gap-2 px-2.5 h-7">
-                              <div className="flex gap-0.5 items-end h-2">
-                                {[0.4, 0.7, 0.3].map((h, i) => (
-                                  <motion.div
-                                    key={i}
-                                    className="w-0.5 bg-primary/60"
-                                    animate={{ height: ["20%", "100%", "20%"] }}
-                                    transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
-                                  />
-                                ))}
-                              </div>
-                              <span className="font-mono text-[8px] uppercase tracking-[0.2em] text-primary/70 font-bold whitespace-nowrap">
-                                Synthesizing
-                              </span>
-                            </div>
-                            
-                            {/* State 2: Stop (Shutter Down) */}
-                            <div className="flex items-center gap-2 px-2.5 h-7 bg-destructive/10">
-                              <Square className="size-2.5 text-destructive fill-destructive/20" />
-                              <span className="font-mono text-[8px] uppercase tracking-[0.2em] text-destructive font-bold whitespace-nowrap">
-                                Stop Analysis
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Minimal Progress Underlay */}
-                          <motion.div 
-                            className="absolute bottom-0 left-0 h-[1px] bg-primary/40 group-hover:bg-destructive/40"
-                            initial={{ width: "0%" }}
-                            animate={{ width: "100%" }}
-                            transition={{ duration: 15, ease: "linear" }}
-                          />
-                        </motion.button>
-                      )}
-                    </AnimatePresence>
-                  </div>
+                {phase === "uploading" && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-3 py-10">
+                    <Loader2 className="size-5 text-primary animate-spin" />
+                    <TextShimmer className="text-[16px] font-display">Uploading {files.length} file{files.length > 1 ? "s" : ""}...</TextShimmer>
+                    <div className="w-36 h-px rounded-full bg-muted overflow-hidden">
+                      <motion.div className="h-full bg-primary rounded-full" initial={{ width: "0%" }} animate={{ width: `${uploadProgress}%` }} />
+                    </div>
+                  </motion.div>
                 )}
 
-                <PromptInputAction tooltip="Clear workspace & restart">
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none border border-transparent hover:border-destructive/30 hover:bg-destructive/10 transition-colors"
-                    onClick={(e) => { e.stopPropagation(); handleClearWorkspace(); }}>
-                    <Trash2 className="size-4 text-muted-foreground hover:text-destructive transition-colors" />
-                  </Button>
-                </PromptInputAction>
-              </div>
-              <PromptInputAction tooltip={phase === "streaming" ? "Stop" : "Send"}>
-                <Button variant="default" size="icon" className="h-8 w-8 rounded-none font-mono shadow-sm transition-all border border-transparent hover:border-primary/50 opacity-90 hover:opacity-100"
-                  onClick={phase === "streaming" ? handleStop : handleSendFollowUp}>
-                  {phase === "streaming" ? <Square className="size-3.5 fill-current" /> : <ArrowUp className="size-4" />}
-                </Button>
-              </PromptInputAction>
-
-            </PromptInputActions>
-          </PromptInput>
-        </div>
-      </div>
-
-      </div>{/* End left panel */}
-
-      {/* ── Right Panel: Generated Files + Report ────────────────────── */}
-      <AnimatePresence>
-        {rightPanelOpen && (
-          <motion.div
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 340, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
-            className="hidden lg:flex flex-col h-full flex-shrink-0 overflow-hidden relative"
-          >
-            {/* Panel inner — fixed width so content doesn't reflow during animation */}
-            <div className="flex flex-col h-full w-[340px] min-w-[340px]">
-
-              {/* Subtle left border glow */}
-              <div className="absolute left-0 top-0 bottom-0 w-px bg-border/40" />
-              <div className="absolute left-0 top-[20%] bottom-[20%] w-px bg-primary/20 blur-[1px]" />
-
-              {/* ── Top: Generated Files ───────────────────────────────── */}
-              <div className="flex-1 flex flex-col min-h-0">
-                {/* Panel Header */}
-                <div className="flex items-center justify-between px-5 py-4 flex-shrink-0">
-                  <div className="flex items-center gap-3">
-                    <div className="w-1.5 h-1.5 bg-primary rotate-45" />
-                    <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-foreground font-semibold">
-                      Generated_Files
-                    </span>
-                    {allArtifacts.length > 0 && (
-                      <span className="font-mono text-[9px] text-muted-foreground/60">{allArtifacts.length}</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Divider */}
-                <div className="mx-5 h-px bg-gradient-to-r from-border/60 via-border/30 to-transparent" />
-
-                {/* Download All */}
-                {allArtifacts.length > 0 && (
-                  <div className="px-5 pt-3 pb-2 flex-shrink-0">
-                    <a
-                      href={getDownloadBundleUrl(sessionId)}
-                      className="flex items-center justify-center gap-2.5 w-full py-2.5 border border-primary/20 bg-primary/[0.03] hover:bg-primary/[0.08] hover:border-primary/40 font-mono text-[9px] uppercase tracking-[0.25em] text-primary/70 hover:text-primary transition-all duration-200"
-                    >
-                      <Package className="size-3.5" />
-                      Download All
-                    </a>
-                  </div>
-                )}
-
-                {/* File List */}
-                <div className="flex-1 overflow-y-auto px-4 py-2 scrollbar-thin">
-                  {allArtifacts.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-center px-6 pb-12">
-                      <div className="size-12 border border-dashed border-border/30 flex items-center justify-center mb-4">
-                        <FileText className="size-5 text-muted-foreground/20" />
-                      </div>
-                      <p className="font-mono text-[9px] text-muted-foreground/40 uppercase tracking-[0.2em] leading-relaxed">
-                        {phase === "streaming" ? "Generating..." : "No files yet"}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-1.5">
-                      {allArtifacts.map((file, i) => {
-                        const Icon = getFileIcon(file.name);
-                        const url = getDownloadUrl(sessionId, file.path);
-                        const isImage = [".png", ".jpg", ".jpeg", ".gif", ".webp"].some((ext) => file.name.endsWith(ext));
-                        return (
-                          <motion.a
-                            key={`rp-${file.name}`}
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            initial={{ opacity: 0, y: 6 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.04, duration: 0.3, ease: "easeOut" }}
-                            className="group relative"
-                          >
-                            {isImage && (
-                              <div className="w-full aspect-[2/1] mb-0 overflow-hidden border border-border/30 bg-muted/30">
-                                <img
-                                  src={url}
-                                  alt={file.name}
-                                  className="w-full h-full object-cover opacity-70 grayscale-[0.3] group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-500"
-                                />
-                              </div>
-                            )}
-                            <div className={cn(
-                              "flex items-center gap-3 px-3 py-2.5 border border-border/30 bg-background/30 hover:bg-primary/[0.04] hover:border-primary/25 transition-all duration-200",
-                              isImage && "border-t-0"
-                            )}>
-                              <Icon className="size-4 text-muted-foreground/40 group-hover:text-primary/60 transition-colors flex-shrink-0" />
-                              <div className="flex flex-col overflow-hidden flex-1 min-w-0">
-                                <p className="text-[11px] font-mono font-medium truncate text-foreground/80 group-hover:text-primary transition-colors">
-                                  {file.name}
-                                </p>
-                                {file.size > 0 && (
-                                  <p className="text-[8px] font-mono text-muted-foreground/40 mt-0.5">
-                                    {file.size < 1024 ? `${file.size} B` : `${(file.size / 1024).toFixed(1)} KB`}
-                                  </p>
-                                )}
-                              </div>
-                              <Download className="size-3 text-muted-foreground/20 group-hover:text-primary/50 transition-colors flex-shrink-0" />
-                            </div>
-                          </motion.a>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* ── Bottom: Report Section ─────────────────────────────── */}
-              <div className="flex-shrink-0">
-                {/* Divider */}
-                <div className="mx-5 h-px bg-gradient-to-r from-border/60 via-border/30 to-transparent" />
-
-                {/* Report: Generating */}
-                {reportStatus === "generating" && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="px-5 py-4"
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2.5">
-                        <motion.div
-                          animate={{ rotate: [0, 180, 360] }}
-                          transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                        >
-                          <Sparkles className="size-3.5 text-primary" />
-                        </motion.div>
-                        <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-foreground font-bold">
-                          Report
-                        </span>
-                      </div>
-                      <button
-                        onClick={handleCancelReport}
-                        className="font-mono text-[8px] uppercase tracking-[0.2em] text-muted-foreground/50 hover:text-destructive transition-colors"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-
-                    {/* Progress bar */}
-                    <div className="w-full h-[3px] bg-muted/20 overflow-hidden mb-2.5">
-                      <motion.div
-                        className="h-full bg-gradient-to-r from-primary/0 via-primary/80 to-primary/0"
-                        animate={{ x: ["-100%", "100%"] }}
-                        transition={{ duration: 1.8, repeat: Infinity, ease: "linear" }}
-                        style={{ width: "50%" }}
-                      />
-                    </div>
-
-                    <p className="font-mono text-[8px] text-muted-foreground/40 tracking-wider">
-                      {reportTheme === "surprise" ? "Surprise me" : reportTheme} theme via Gemini 3.1 Pro
+                {phase === "planning" && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-3 py-10">
+                    <Loader2 className="size-5 text-primary animate-spin" />
+                    <TextShimmer className="text-[16px] font-display">Planning analysis...</TextShimmer>
+                    <p className="text-xs text-muted-foreground max-w-sm text-center">
+                      Profiling your data and building an analysis strategy
                     </p>
                   </motion.div>
                 )}
 
-                {/* Report: Ready */}
-                {reportStatus === "ready" && reportUrl && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <button
-                      onClick={() => window.open(reportUrl, "_blank")}
-                      className="w-full px-5 py-4 text-left cursor-pointer group relative overflow-hidden hover:bg-primary/[0.03] transition-all duration-300"
-                    >
-                      {/* Shine sweep */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/[0.03] to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                {plan && (phase === "streaming" || phase === "complete") && (
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+                    <details className="group border border-primary/10 bg-primary/[0.02] overflow-hidden">
+                      <summary className="cursor-pointer px-4 py-2.5 flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors">
+                        <span className="size-1.5 bg-primary/60 rotate-45" />
+                        Analysis Plan
+                        <span className="ml-auto text-[10px] opacity-50">click to expand</span>
+                      </summary>
+                      <div className="px-4 pb-4 pt-1 text-sm text-muted-foreground prose prose-sm dark:prose-invert max-w-none">
+                        <Markdown components={{
+                          code: ({ children }) => (
+                            <code className="bg-primary-foreground rounded-sm px-1 font-mono text-sm">{children}</code>
+                          ),
+                          pre: ({ children }) => (
+                            <pre className="bg-primary-foreground/50 rounded-md px-3 py-2 font-mono text-xs whitespace-pre-wrap overflow-x-auto">{children}</pre>
+                          ),
+                        }}>{plan}</Markdown>
+                      </div>
+                    </details>
+                  </motion.div>
+                )}
 
-                      <div className="flex items-center gap-3 relative">
-                        <div className="size-9 border border-primary/30 bg-primary/[0.08] flex items-center justify-center group-hover:bg-primary/15 transition-colors">
-                          <Sparkles className="size-4 text-primary" />
+                {phase === "error" && (
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                    className="rounded-xl border border-destructive/20 bg-destructive/5 p-5 text-center space-y-2">
+                    <p className="text-sm text-destructive font-medium">{errorMessage}</p>
+                    <p className="text-xs text-muted-foreground">Backend at <code className="px-1 py-0.5 rounded bg-muted font-mono text-[11px]">localhost:8200</code></p>
+                    <div className="flex items-center justify-center gap-2 pt-1">
+                      <Button variant="outline" size="sm" onClick={() => router.push("/")} className="rounded-full text-xs h-7">Back</Button>
+                      <Button variant="default" size="sm" onClick={() => window.location.reload()} className="rounded-full text-xs h-7">Retry</Button>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Completed conversation turns (previous assistant responses + follow-up user messages) */}
+                {completedTurns.map((turn, i) => {
+                  if (turn.role === "assistant") {
+                    const turnSections = parseSections(turn.content);
+                    const turnPreTag = getPreTagContent(turn.content);
+                    return (
+                      <div key={`turn-${i}`}>
+                        {turnPreTag && (
+                          <div className="text-[16px] leading-[1.75] text-muted-foreground whitespace-pre-wrap mt-2 mb-4">{turnPreTag}</div>
+                        )}
+                        <div className="sections-timeline">
+                          {buildSectionElements(turnSections, `t${i}-`)}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-mono text-[9px] uppercase tracking-[0.25em] text-primary font-bold mb-0.5">
-                            View Report
+                        {turn.artifacts && turn.artifacts.length > 0 && renderArtifactsStrip(turn.artifacts, `t${i}-`)}
+                      </div>
+                    );
+                  }
+                  // User turn
+                  return (
+                    <div key={`turn-${i}`} className="mt-6">
+                      {renderUserBubble(turn.content, turn.fileNames || [], `followup-${i}`)}
+                    </div>
+                  );
+                })}
+
+                {/* Current live stream */}
+                {preTagContent && (phase === "streaming" || phase === "complete") && (
+                  <div className="text-[16px] leading-[1.75] text-muted-foreground whitespace-pre-wrap mt-2 mb-4">{preTagContent}</div>
+                )}
+
+                {phase === "streaming" && sections.length === 0 && !preTagContent && (
+                  <div className="flex items-center justify-center py-8">
+                    <TextShimmer className="text-[16px] font-display">Thinking...</TextShimmer>
+                  </div>
+                )}
+
+                {/* Timeline spine + sections (current/live) */}
+                <div className="sections-timeline">
+                  {sectionElements}
+                </div>
+
+                {/* Artifacts strip (current/live) — shown inline on small screens, right panel on lg */}
+                <div className="lg:hidden">
+                  {phase === "complete" && dedupedArtifacts.length > 0 && renderArtifactsStrip(dedupedArtifacts, "live-")}
+                </div>
+
+                {/* Inline report indicators — only on small screens without right panel */}
+                <div className="lg:hidden">
+                  {phase === "complete" && reportStatus === "generating" && (
+                    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                      className="mt-6 mb-2 border border-primary/20 bg-primary/[0.03] p-5 relative overflow-hidden">
+                      <div className="flex items-center gap-3 mb-3">
+                        <Sparkles className="size-4 text-primary animate-pulse" />
+                        <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-foreground font-bold">Generating_Report</span>
+                      </div>
+                      <div className="w-full h-[2px] bg-muted/30 overflow-hidden rounded-full">
+                        <motion.div className="h-full bg-gradient-to-r from-primary/0 via-primary to-primary/0"
+                          animate={{ x: ["-100%", "100%"] }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} style={{ width: "60%" }} />
+                      </div>
+                    </motion.div>
+                  )}
+                  {phase === "complete" && reportStatus === "ready" && reportUrl && (
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-6 mb-2">
+                      <button onClick={() => window.open(reportUrl, "_blank")}
+                        className="w-full border border-primary/30 bg-primary/[0.04] hover:bg-primary/[0.08] p-4 text-left">
+                        <div className="flex items-center gap-3">
+                          <Sparkles className="size-4 text-primary" />
+                          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-primary font-bold">View_Report</span>
+                        </div>
+                      </button>
+                    </motion.div>
+                  )}
+                </div>
+
+                <div className="h-4" />
+              </div>
+            </div>
+
+            {/* Bottom chat bar */}
+            <div className="sticky bottom-0 z-50 bg-background/60 backdrop-blur-xl px-4 py-1.5 sm:py-2 relative">
+              {/* Glowing Pedestal Line */}
+              <div className="absolute inset-x-0 top-0 flex justify-center pointer-events-none">
+                <div className="w-[80%] max-w-2xl h-[1px] bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[60%] max-w-xl h-12 bg-primary/10 blur-2xl" />
+              </div>
+              <div className="mx-auto max-w-3xl relative z-10">
+                {/* Scroll to bottom — floats above the prompt input */}
+                <div className={cn(
+                  "absolute -top-10 left-1/2 -translate-x-1/2 transition-all duration-200",
+                  showScrollBtn ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-2 pointer-events-none"
+                )}>
+                  <button
+                    onClick={scrollToBottom}
+                    className="inline-flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-widest text-primary/70 hover:text-primary bg-background/90 border border-primary/20 hover:border-primary/50 px-4 py-1.5 shadow-sm backdrop-blur-sm transition-colors"
+                  >
+                    <ArrowDown className="size-3" />
+                    Scroll
+                  </button>
+                </div>
+                <input ref={followUpFileInputRef} type="file" multiple className="hidden" onChange={handleFollowUpFileChange} />
+                <PromptInput value={followUpInput} onValueChange={setFollowUpInput}
+                  isLoading={phase === "streaming"} onSubmit={phase === "streaming" ? handleStop : handleSendFollowUp}
+                  disabled={phase === "uploading"} className="!rounded-none border border-primary/20 bg-primary/5 backdrop-blur-md shadow-2xl shadow-primary/10 relative group transition-colors hover:border-primary/40 focus-within:border-primary/60">
+
+                  <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-primary opacity-50 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                  <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-primary opacity-50 group-hover:opacity-100 transition-opacity pointer-events-none" />
+
+                  {followUpFiles.length > 0 && (
+                    <div className="flex flex-wrap gap-2 px-3 pt-3">
+                      {followUpFiles.map((file, i) => (
+                        <div key={i} className="flex items-center gap-1.5 border border-primary/20 bg-background/50 px-2 py-1 text-[11px] font-mono shadow-sm">
+                          <Paperclip className="size-3 text-primary/70" />
+                          <span className="max-w-[120px] truncate">{file.name}</span>
+                          <button onClick={() => setFollowUpFiles((prev) => prev.filter((_, j) => j !== i))} className="hover:text-destructive text-muted-foreground ml-1">
+                            <X className="size-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <PromptInputTextarea placeholder={phase === "streaming" ? "Analyzing status..." : "Continue the session..."} className="text-sm font-medium tracking-wide dark:bg-transparent min-h-[40px] px-3 pt-2.5" />
+                  <PromptInputActions className="flex items-center justify-between gap-2 px-2 pb-1.5 pt-1.5">
+                    <div className="flex items-center gap-1">
+                      <PromptInputAction tooltip="Attach files">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none border border-transparent hover:border-primary/30 hover:bg-primary/10 transition-colors"
+                          onClick={(e) => { e.stopPropagation(); followUpFileInputRef.current?.click(); }}>
+                          <Paperclip className="size-4 text-primary/70 hover:text-primary transition-colors" />
+                        </Button>
+                      </PromptInputAction>
+
+                      {/* Theme selector */}
+                      <Popover open={themePopoverOpen} onOpenChange={setThemePopoverOpen}>
+                        <PopoverTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none border border-transparent hover:border-primary/30 hover:bg-primary/10 transition-colors"
+                            title={`Aesthetic: ${REPORT_THEMES.find(t => t.id === reportTheme)?.label ?? reportTheme}`}
+                            onClick={(e) => e.stopPropagation()}>
+                            <Palette className="size-4 text-primary/70 hover:text-primary transition-colors" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          className="w-44 rounded-none border border-border bg-popover p-1.5 shadow-xl"
+                          align="start" side="top"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <p className="px-3 pb-2 pt-1 font-mono text-[8px] uppercase tracking-[0.25em] text-muted-foreground/70 border-b border-border/30 mb-1">
+                            Pick_Aesthetic
+                          </p>
+                          {REPORT_THEMES.map((t) => (
+                            <button
+                              key={t.id}
+                              onClick={() => { setReportTheme(t.id); setThemePopoverOpen(false); }}
+                              className={cn(
+                                "flex w-full items-center justify-between px-3 py-1.5 text-[11px] font-mono uppercase tracking-wider transition-colors hover:bg-accent hover:text-accent-foreground border-l-2 border-transparent hover:border-primary",
+                                t.id === reportTheme && "bg-accent/50 text-accent-foreground border-primary"
+                              )}
+                            >
+                              <span className="flex items-center gap-1.5">
+                                {t.label}
+                                {t.id === "surprise" && <Sparkles className="size-2.5 text-primary/70" />}
+                              </span>
+                              {t.id === reportTheme && <Check className="size-3 text-muted-foreground" />}
+                            </button>
+                          ))}
+                        </PopoverContent>
+                      </Popover>
+
+                      {/* Clever Status Shutter Pill */}
+                      {phase === "complete" && (
+                        <div className="relative h-8 overflow-hidden flex items-center">
+                          <AnimatePresence mode="wait">
+                            {reportStatus !== "generating" ? (
+                              <motion.div
+                                key="idle"
+                                initial={{ scale: 0.8, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.8, opacity: 0 }}
+                              >
+                                <PromptInputAction tooltip="Generate report">
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none border border-transparent hover:border-primary/30 hover:bg-primary/10 transition-colors"
+                                    onClick={(e) => { e.stopPropagation(); handleRegenerateReport(); }}>
+                                    <FileText className="size-4 text-primary/70 hover:text-primary transition-colors" />
+                                  </Button>
+                                </PromptInputAction>
+                              </motion.div>
+                            ) : (
+                              <motion.button
+                                key="generating"
+                                initial={{ width: 32, opacity: 0 }}
+                                animate={{ width: 100, opacity: 1 }}
+                                exit={{ width: 32, opacity: 0 }}
+                                onClick={(e) => { e.stopPropagation(); handleCancelReport(); }}
+                                className="group relative h-8 border border-primary/30 bg-primary/5 overflow-hidden transition-all duration-300 hover:border-destructive/40 hover:bg-destructive/5"
+                              >
+                                {/* Inner Shutter Container */}
+                                <div className="flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:-translate-y-1/2">
+                                  {/* State 1: Synthesizing */}
+                                  <div className="flex items-center justify-center gap-2 h-8 px-2">
+                                    <div className="flex gap-0.5 items-end h-2">
+                                      {[0.4, 0.7, 0.3].map((h, i) => (
+                                        <motion.div
+                                          key={i}
+                                          className="w-0.5 bg-primary/60"
+                                          animate={{ height: ["20%", "100%", "20%"] }}
+                                          transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+                                        />
+                                      ))}
+                                    </div>
+                                    <span className="font-mono text-[8px] uppercase tracking-[0.2em] text-primary/70 font-bold whitespace-nowrap">
+                                      Crafting
+                                    </span>
+                                  </div>
+
+                                  {/* State 2: Stop (Shutter Down) */}
+                                  <div className="flex items-center justify-center gap-2 h-8 px-2 bg-destructive/10">
+                                    <Square className="size-2.5 text-destructive fill-destructive/20" />
+                                    <span className="font-mono text-[8px] uppercase tracking-[0.2em] text-destructive font-bold whitespace-nowrap">
+                                      Stop
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Minimal Progress Underlay */}
+                                <motion.div
+                                  className="absolute bottom-0 left-0 h-[1px] bg-primary/40 group-hover:bg-destructive/40"
+                                  initial={{ width: "0%" }}
+                                  animate={{ width: "100%" }}
+                                  transition={{ duration: 15, ease: "linear" }}
+                                />
+                              </motion.button>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      )}
+
+                      <PromptInputAction tooltip="Clear workspace & restart">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none border border-transparent hover:border-destructive/30 hover:bg-destructive/10 transition-colors"
+                          onClick={(e) => { e.stopPropagation(); handleClearWorkspace(); }}>
+                          <Trash2 className="size-4 text-muted-foreground hover:text-destructive transition-colors" />
+                        </Button>
+                      </PromptInputAction>
+                    </div>
+                    <PromptInputAction tooltip={phase === "streaming" ? "Stop" : "Send"}>
+                      <Button variant="default" size="icon" className="h-8 w-8 rounded-none font-mono shadow-sm transition-all border border-transparent hover:border-primary/50 opacity-90 hover:opacity-100"
+                        onClick={phase === "streaming" ? handleStop : handleSendFollowUp}>
+                        {phase === "streaming" ? <Square className="size-3.5 fill-current" /> : <ArrowUp className="size-4" />}
+                      </Button>
+                    </PromptInputAction>
+
+                  </PromptInputActions>
+                </PromptInput>
+              </div>
+            </div>
+
+          </div>{/* End left panel */}
+
+          {/* ── Right Panel: Generated Files + Report ────────────────────── */}
+          <AnimatePresence>
+            {rightPanelOpen && (
+              <motion.div
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 340, opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
+                className="hidden lg:flex flex-col h-full flex-shrink-0 overflow-hidden relative"
+              >
+                {/* Panel inner — fixed width so content doesn't reflow during animation */}
+                <div className="flex flex-col h-full w-[340px] min-w-[340px]">
+
+                  {/* Subtle left border glow */}
+                  <div className="absolute left-0 top-0 bottom-0 w-px bg-border/40" />
+                  <div className="absolute left-0 top-[20%] bottom-[20%] w-px bg-primary/20 blur-[1px]" />
+
+                  {/* ── Top: Generated Files ───────────────────────────────── */}
+                  <div className="flex-1 flex flex-col min-h-0">
+                    {/* Panel Header */}
+                    <div className="flex items-center justify-between px-5 py-4 flex-shrink-0">
+                      <div className="flex items-center gap-3">
+                        <div className="w-1.5 h-1.5 bg-primary rotate-45" />
+                        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-foreground font-semibold">
+                          Generated_Files
+                        </span>
+                        {allArtifacts.length > 0 && (
+                          <span className="font-mono text-[9px] text-muted-foreground/60">{allArtifacts.length}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="mx-5 h-px bg-gradient-to-r from-border/60 via-border/30 to-transparent" />
+
+                    {/* Download All */}
+                    {allArtifacts.length > 0 && (
+                      <div className="px-5 pt-3 pb-2 flex-shrink-0">
+                        <a
+                          href={getDownloadBundleUrl(sessionId)}
+                          className="flex items-center justify-center gap-2.5 w-full py-2.5 border border-primary/20 bg-primary/[0.03] hover:bg-primary/[0.08] hover:border-primary/40 font-mono text-[9px] uppercase tracking-[0.25em] text-primary/70 hover:text-primary transition-all duration-200"
+                        >
+                          <Package className="size-3.5" />
+                          Download All
+                        </a>
+                      </div>
+                    )}
+
+                    {/* File List */}
+                    <div className="flex-1 overflow-y-auto px-4 py-2 scrollbar-thin">
+                      {allArtifacts.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-full text-center px-6 pb-12">
+                          <div className="size-12 border border-dashed border-border/30 flex items-center justify-center mb-4">
+                            <FileText className="size-5 text-muted-foreground/20" />
                           </div>
-                          <p className="text-[9px] text-muted-foreground/50 font-mono">
-                            Open in new tab
+                          <p className="font-mono text-[9px] text-muted-foreground/40 uppercase tracking-[0.2em] leading-relaxed">
+                            {phase === "streaming" ? "Generating..." : "No files yet"}
                           </p>
                         </div>
-                        <ArrowUp className="size-3.5 text-primary/40 group-hover:text-primary group-hover:-translate-y-0.5 transition-all duration-200 rotate-45 flex-shrink-0" />
-                      </div>
-                    </button>
-                  </motion.div>
-                )}
-
-                {/* Report: Error */}
-                {reportStatus === "error" && (
-                  <div className="px-5 py-4">
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-destructive/70">Error</span>
-                      <button
-                        onClick={handleRetryReport}
-                        className="font-mono text-[8px] uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors"
-                      >
-                        Retry
-                      </button>
+                      ) : (
+                        <div className="flex flex-col gap-1.5">
+                          {allArtifacts.map((file, i) => {
+                            const Icon = getFileIcon(file.name);
+                            const url = getDownloadUrl(sessionId, file.path);
+                            const isImage = [".png", ".jpg", ".jpeg", ".gif", ".webp"].some((ext) => file.name.endsWith(ext));
+                            return (
+                              <motion.a
+                                key={`rp-${file.name}`}
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                initial={{ opacity: 0, y: 6 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: i * 0.04, duration: 0.3, ease: "easeOut" }}
+                                className="group relative"
+                              >
+                                {isImage && (
+                                  <div className="w-full aspect-[2/1] mb-0 overflow-hidden border border-border/30 bg-muted/30">
+                                    <img
+                                      src={url}
+                                      alt={file.name}
+                                      className="w-full h-full object-cover opacity-70 grayscale-[0.3] group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-500"
+                                    />
+                                  </div>
+                                )}
+                                <div className={cn(
+                                  "flex items-center gap-3 px-3 py-2.5 border border-border/30 bg-background/30 hover:bg-primary/[0.04] hover:border-primary/25 transition-all duration-200",
+                                  isImage && "border-t-0"
+                                )}>
+                                  <Icon className="size-4 text-muted-foreground/40 group-hover:text-primary/60 transition-colors flex-shrink-0" />
+                                  <div className="flex flex-col overflow-hidden flex-1 min-w-0">
+                                    <p className="text-[11px] font-mono font-medium truncate text-foreground/80 group-hover:text-primary transition-colors">
+                                      {file.name}
+                                    </p>
+                                    {file.size > 0 && (
+                                      <p className="text-[8px] font-mono text-muted-foreground/40 mt-0.5">
+                                        {file.size < 1024 ? `${file.size} B` : `${(file.size / 1024).toFixed(1)} KB`}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <Download className="size-3 text-muted-foreground/20 group-hover:text-primary/50 transition-colors flex-shrink-0" />
+                                </div>
+                              </motion.a>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
-                    {reportError && (
-                      <p className="text-[9px] text-muted-foreground/50 mt-1.5 font-mono truncate">{reportError}</p>
+                  </div>
+
+                  {/* ── Bottom: Report Section ─────────────────────────────── */}
+                  <div className="flex-shrink-0">
+                    {/* Divider */}
+                    <div className="mx-5 h-px bg-gradient-to-r from-border/60 via-border/30 to-transparent" />
+
+                    {/* Report: Generating */}
+                    {reportStatus === "generating" && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="px-5 py-4"
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2.5">
+                            <motion.div
+                              animate={{ rotate: [0, 180, 360] }}
+                              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                            >
+                              <Sparkles className="size-3.5 text-primary" />
+                            </motion.div>
+                            <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-foreground font-bold">
+                              Report
+                            </span>
+                          </div>
+                          <button
+                            onClick={handleCancelReport}
+                            className="font-mono text-[8px] uppercase tracking-[0.2em] text-muted-foreground/50 hover:text-destructive transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+
+                        {/* Progress bar */}
+                        <div className="w-full h-[3px] bg-muted/20 overflow-hidden mb-2.5">
+                          <motion.div
+                            className="h-full bg-gradient-to-r from-primary/0 via-primary/80 to-primary/0"
+                            animate={{ x: ["-100%", "100%"] }}
+                            transition={{ duration: 1.8, repeat: Infinity, ease: "linear" }}
+                            style={{ width: "50%" }}
+                          />
+                        </div>
+
+                        <p className="font-mono text-[8px] text-muted-foreground/40 tracking-wider">
+                          {reportTheme === "surprise" ? "Surprise me" : reportTheme} aesthetic via Gemini 3.1 Pro
+                        </p>
+                      </motion.div>
+                    )}
+
+                    {/* Report: Ready */}
+                    {reportStatus === "ready" && reportUrl && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <button
+                          onClick={() => window.open(reportUrl, "_blank")}
+                          className="w-full px-5 py-4 text-left cursor-pointer group relative overflow-hidden hover:bg-primary/[0.03] transition-all duration-300"
+                        >
+                          {/* Shine sweep */}
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/[0.03] to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+
+                          <div className="flex items-center gap-3 relative">
+                            <div className="size-9 border border-primary/30 bg-primary/[0.08] flex items-center justify-center group-hover:bg-primary/15 transition-colors">
+                              <Sparkles className="size-4 text-primary" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-mono text-[9px] uppercase tracking-[0.25em] text-primary font-bold mb-0.5">
+                                View Report
+                              </div>
+                              <p className="text-[9px] text-muted-foreground/50 font-mono">
+                                Open in new tab
+                              </p>
+                            </div>
+                            <ArrowUp className="size-3.5 text-primary/40 group-hover:text-primary group-hover:-translate-y-0.5 transition-all duration-200 rotate-45 flex-shrink-0" />
+                          </div>
+                        </button>
+                      </motion.div>
+                    )}
+
+                    {/* Report: Error */}
+                    {reportStatus === "error" && (
+                      <div className="px-5 py-4">
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-destructive/70">Error</span>
+                          <button
+                            onClick={handleRetryReport}
+                            className="font-mono text-[8px] uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors"
+                          >
+                            Retry
+                          </button>
+                        </div>
+                        {reportError && (
+                          <p className="text-[9px] text-muted-foreground/50 mt-1.5 font-mono truncate">{reportError}</p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Report: Cancelled */}
+                    {reportStatus === "cancelled" && (
+                      <div className="px-5 py-4">
+                        <button
+                          onClick={handleRetryReport}
+                          className="flex items-center justify-center gap-2.5 w-full py-2.5 border border-border/30 bg-muted/[0.03] hover:bg-primary/[0.05] hover:border-primary/25 font-mono text-[9px] uppercase tracking-[0.25em] text-muted-foreground/60 hover:text-primary transition-all duration-200"
+                        >
+                          <Sparkles className="size-3" />
+                          Generate Report
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Report: Idle / pending */}
+                    {reportStatus === "idle" && phase !== "complete" && (
+                      <div className="px-5 py-4">
+                        <div className="flex items-center gap-2.5 text-muted-foreground/30">
+                          <Sparkles className="size-3" />
+                          <span className="font-mono text-[8px] uppercase tracking-[0.25em]">Report pending</span>
+                        </div>
+                      </div>
                     )}
                   </div>
-                )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-                {/* Report: Cancelled */}
-                {reportStatus === "cancelled" && (
-                  <div className="px-5 py-4">
-                    <button
-                      onClick={handleRetryReport}
-                      className="flex items-center justify-center gap-2.5 w-full py-2.5 border border-border/30 bg-muted/[0.03] hover:bg-primary/[0.05] hover:border-primary/25 font-mono text-[9px] uppercase tracking-[0.25em] text-muted-foreground/60 hover:text-primary transition-all duration-200"
-                    >
-                      <Sparkles className="size-3" />
-                      Generate Report
-                    </button>
-                  </div>
-                )}
-
-                {/* Report: Idle / pending */}
-                {reportStatus === "idle" && phase !== "complete" && (
-                  <div className="px-5 py-4">
-                    <div className="flex items-center gap-2.5 text-muted-foreground/30">
-                      <Sparkles className="size-3" />
-                      <span className="font-mono text-[8px] uppercase tracking-[0.25em]">Report pending</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
+        </div>
+      </div>
     </div>
-    </div>
-  </div>
   );
 }

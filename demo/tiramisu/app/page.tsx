@@ -18,7 +18,7 @@ export default function Home() {
   const router = useRouter();
   const [input, setInput] = useState("");
   const [files, setFiles] = useState<File[]>([]);
-  const [reportTheme, setReportTheme] = useState("modern");
+  const [reportTheme, setReportTheme] = useState("literature");
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
   const [planRouterEnabled, setPlanRouterEnabled] = useState(false);
   const [engine, setEngine] = useState<EngineType>("deepanalyze");
