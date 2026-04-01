@@ -24,8 +24,14 @@ import {
   Package,
   PanelRightOpen,
   PanelRightClose,
+  Palette,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TextShimmer } from "@/components/ui/text-shimmer";
 import { CodeBlockCode } from "@/components/ui/code-block";
@@ -117,6 +123,15 @@ const SECTION_META: Record<SectionType, { label: string; color: string }> = {
   Thinking: { label: "reasoning", color: "var(--muted-foreground)" },
 };
 
+const REPORT_THEMES = [
+  { id: "modern", label: "Modern" },
+  { id: "literature", label: "Literature" },
+  { id: "academic", label: "Academic" },
+  { id: "minimal", label: "Minimal" },
+  { id: "business", label: "Business" },
+  { id: "surprise", label: "Surprise me" },
+] as const;
+
 // ─── Helpers ─────────────────────────────────────────────────────────
 
 function extractCodeLanguage(content: string): string {
@@ -140,7 +155,7 @@ function getFileIcon(name: string) {
 export function AnalyzePage({
   prompt,
   files,
-  reportTheme,
+  reportTheme: initialReportTheme,
   presetId,
   planningEnabled,
   routerEnabled,
@@ -153,6 +168,7 @@ export function AnalyzePage({
 
   // ── State ─────────────────────────────────────────────────────────
   const [phase, setPhase] = useState<Phase>("uploading");
+  const [reportTheme, setReportTheme] = useState(initialReportTheme);
   const [errorMessage, setErrorMessage] = useState("");
   const [accumulatedContent, setAccumulatedContent] = useState("");
   const [artifacts, setArtifacts] = useState<WorkspaceFile[]>([]);
@@ -166,6 +182,7 @@ export function AnalyzePage({
   const [workspaceFileNames, setWorkspaceFileNames] = useState<string[]>([]);
   const [completedTurns, setCompletedTurns] = useState<CompletedTurn[]>([]);
   const followUpFileInputRef = useRef<HTMLInputElement>(null);
+  const [themePopoverOpen, setThemePopoverOpen] = useState(false);
 
   const pendingContentRef = useRef("");
   const displayedContentRef = useRef("");
@@ -286,6 +303,17 @@ export function AnalyzePage({
   const handleRetryReport = useCallback(() => {
     setReportStatus("idle");
     setReportError(null);
+  }, []);
+
+  const handleRegenerateReport = useCallback(() => {
+    // Cancel any in-progress generation first
+    reportAbortRef.current?.abort();
+    reportAbortRef.current = null;
+    reportGenIdRef.current++;
+    setReportUrl(null);
+    setReportError(null);
+    // Set to idle so the auto-trigger effect picks it up
+    setReportStatus("idle");
   }, []);
 
   // ── Scroll tracking ───────────────────────────────────────────────
@@ -1091,6 +1119,69 @@ export function AnalyzePage({
                     <Paperclip className="size-4 text-primary/70 hover:text-primary transition-colors" />
                   </Button>
                 </PromptInputAction>
+
+                {/* Theme selector */}
+                <Popover open={themePopoverOpen} onOpenChange={setThemePopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none border border-transparent hover:border-primary/30 hover:bg-primary/10 transition-colors"
+                      title={`Theme: ${REPORT_THEMES.find(t => t.id === reportTheme)?.label ?? reportTheme}`}
+                      onClick={(e) => e.stopPropagation()}>
+                      <Palette className="size-4 text-primary/70 hover:text-primary transition-colors" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-44 rounded-none border border-border bg-popover p-1.5 shadow-xl"
+                    align="start" side="top"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <p className="px-3 pb-2 pt-1 font-mono text-[8px] uppercase tracking-[0.25em] text-muted-foreground/70 border-b border-border/30 mb-1">
+                      Report Theme
+                    </p>
+                    {REPORT_THEMES.map((t) => (
+                      <button
+                        key={t.id}
+                        onClick={() => { setReportTheme(t.id); setThemePopoverOpen(false); }}
+                        className={cn(
+                          "flex w-full items-center justify-between px-3 py-1.5 text-[11px] font-mono uppercase tracking-wider transition-colors hover:bg-accent hover:text-accent-foreground border-l-2 border-transparent hover:border-primary",
+                          t.id === reportTheme && "bg-accent/50 text-accent-foreground border-primary"
+                        )}
+                      >
+                        <span className="flex items-center gap-1.5">
+                          {t.label}
+                          {t.id === "surprise" && <Sparkles className="size-2.5 text-primary/70" />}
+                        </span>
+                        {t.id === reportTheme && <Check className="size-3 text-muted-foreground" />}
+                      </button>
+                    ))}
+                  </PopoverContent>
+                </Popover>
+
+                {/* Report: Regenerate / Cancel — labeled pill buttons */}
+                {phase === "complete" && reportStatus !== "generating" && (
+                  <button
+                    className="flex items-center gap-1.5 h-7 px-2.5 border border-primary/20 bg-primary/[0.03] hover:bg-primary/[0.08] hover:border-primary/40 transition-all duration-200 group"
+                    title="Regenerate report with current theme"
+                    onClick={(e) => { e.stopPropagation(); handleRegenerateReport(); }}>
+                    <FileText className="size-3 text-primary/50 group-hover:text-primary transition-colors" />
+                    <span className="font-mono text-[8px] uppercase tracking-[0.2em] text-primary/60 group-hover:text-primary transition-colors font-semibold">
+                      Report
+                    </span>
+                  </button>
+                )}
+                {reportStatus === "generating" && (
+                  <button
+                    className="flex items-center gap-1.5 h-7 px-2.5 border border-primary/25 bg-primary/[0.05] hover:border-destructive/40 hover:bg-destructive/[0.06] transition-all duration-200 group relative overflow-hidden"
+                    title="Cancel report generation"
+                    onClick={(e) => { e.stopPropagation(); handleCancelReport(); }}>
+                    <Loader2 className="size-3 text-primary/60 animate-spin group-hover:hidden" />
+                    <Square className="size-2.5 text-destructive/70 hidden group-hover:block" />
+                    <span className="font-mono text-[8px] uppercase tracking-[0.2em] text-primary/60 group-hover:text-destructive/80 transition-colors font-semibold">
+                      <span className="group-hover:hidden">Report...</span>
+                      <span className="hidden group-hover:inline">Stop</span>
+                    </span>
+                  </button>
+                )}
+
                 <PromptInputAction tooltip="Clear workspace & restart">
                   <Button variant="ghost" size="icon" className="h-8 w-8 rounded-none border border-transparent hover:border-destructive/30 hover:bg-destructive/10 transition-colors"
                     onClick={(e) => { e.stopPropagation(); handleClearWorkspace(); }}>
@@ -1272,7 +1363,7 @@ export function AnalyzePage({
                     </div>
 
                     <p className="font-mono text-[8px] text-muted-foreground/40 tracking-wider">
-                      Crafting with Gemini 3.1 Pro...
+                      {reportTheme === "surprise" ? "Surprise me" : reportTheme} theme via Gemini 3.1 Pro
                     </p>
                   </motion.div>
                 )}
