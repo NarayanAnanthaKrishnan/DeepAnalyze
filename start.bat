@@ -21,12 +21,18 @@ echo.
 
 :: Start backend API
 echo Starting backend API...
-start /B "Tiramisu Backend" cmd /c "python backend.py > logs\backend.log 2>&1"
+start /B "Tiramisu Backend" cmd /c "venv\Scripts\python.exe backend.py > logs\backend.log 2>&1"
 echo Backend started in background.
 echo API running on: http://localhost:%BACKEND_PORT%
 
 :: Wait for backend to initialize
-timeout /t 3 /nobreak >nul
+timeout /t 5 /nobreak >nul
+netstat -ano | findstr ":%BACKEND_PORT%.*LISTENING" >nul 2>&1
+if %errorlevel% equ 0 (
+    echo Backend verified listening on %BACKEND_PORT%
+) else (
+    echo WARNING: Backend may not have started. Check logs\backend.log
+)
 
 :: Start frontend
 echo.

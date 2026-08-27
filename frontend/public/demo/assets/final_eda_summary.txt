@@ -1,0 +1,40 @@
+
+Gender Distribution:
+gender
+Male      25
+Female    15
+
+Top Preferred Avenues (Categorical):
+Avenue
+Mutual Fund              18
+Equity                   10
+Fixed Deposits            9
+Public Provident Fund     3
+
+Key Factors Influencing Investment:
+Factor
+Returns           25
+Risk              14
+Locking Period     1
+
+Primary Investment Objectives:
+Objective
+Capital Appreciation    26
+Growth                  11
+Income                   3
+
+Primary Sources of Information:
+Source
+Financial Consultants       16
+Newspapers and Magazines    14
+Television                   6
+Internet                     4
+
+Average Rankings (1-7, where 1 is best):
+PPF                 2.025
+Mutual_Funds        2.550
+Equity_Market       3.475
+Fixed_Deposits      3.575
+Government_Bonds    4.650
+Debentures          5.750
+Gold                5.975

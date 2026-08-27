@@ -1,0 +1,126 @@
+<Analyze>
+Dataset contains 40 investors across 24 columns — demographics (gender, age), investment preferences (rankings 1-7 for 7 avenues), decision factors and objectives. Goal is full EDA: profile data quality, distributions, correlations between demographics and investment choices, and surface what drives investment behavior. No missing values detected, so we can proceed directly to distributional and bivariate analysis.
+</Analyze>
+
+<Understand>
+Finance_data.csv is a small but rich behavioural dataset. Key angles:
+- Which avenues are preferred? Rankings + Avenue categorical.
+- What drives choice? Factor (Returns/Risk/Locking Period) and Reason_* columns.
+- Demographic splits: gender vs objective, gender vs avenue.
+- Rankings correlation: do people who rank PPF highly also rank Fixed Deposits highly?
+Visuals needed: ranking distributions, correlation heatmap, demographics breakdown, and factor analysis.
+</Understand>
+
+<Code>
+```python
+import pandas as pd, numpy as np, matplotlib.pyplot as plt, seaborn as sns
+df = pd.read_csv("Finance_data.csv")
+print(df.shape)
+print(df.dtypes)
+print(df.isnull().sum().sum(), "missing total")
+print(df.head(3).to_string())
+```
+</Code>
+
+<Execute>
+```
+(40, 24)
+gender               object
+age                   int64
+Investment_Avenues   object
+...
+0 missing total
+  gender  age Investment_Avenues  Mutual_Funds  Equity_Market  ...  Source
+0   Male   34                Yes             4              2  ...  Financial Consultants
+1   Male   29                Yes             2              3  ...  Newspapers and Magazines
+```
+</Execute>
+
+<Code>
+```python
+# Descriptive stats + rankings
+desc = df[["Mutual_Funds","Equity_Market","Debentures","Government_Bonds","Fixed_Deposits","PPF","Gold"]].describe()
+desc.to_csv("descriptive_stats.csv")
+print(desc.round(2).to_string())
+# Save data info
+with open("data_info.txt","w",encoding="utf-8") as f:
+    df.info(buf=f)
+print("saved")
+```
+</Code>
+
+<Execute>
+```
+       Mutual_Funds  Equity_Market  Debentures  Government_Bonds  Fixed_Deposits   PPF  Gold
+count          40.0           40.0        40.0              40.0            40.0  40.0  40.0
+mean            2.55           3.47        5.75               4.65             3.57  2.02  5.97
+```
+</Execute>
+
+<Code>
+```python
+# Correlation heatmap of rankings
+plt.figure(figsize=(8,6))
+corr = df[["Mutual_Funds","Equity_Market","Debentures","Government_Bonds","Fixed_Deposits","PPF","Gold"]].corr()
+sns.heatmap(corr, annot=True, cmap="coolwarm", fmt=".2f")
+plt.title("Ranking Correlation — lower rank = more preferred")
+plt.tight_layout()
+plt.savefig("correlation_heatmap.png", dpi=150)
+print(corr.round(2).to_string())
+```
+</Code>
+
+<Execute>
+```
+                  Mutual_Funds  Equity_Market  Debentures  Government_Bonds  Fixed_Deposits   PPF  Gold
+Mutual_Funds              1.00           0.12       -0.08              0.15            0.02  0.18 -0.05
+PPF                       0.18           0.05       -0.12              0.10            0.22  1.00  0.03
+```
+</Execute>
+
+<File>
+![correlation_heatmap.png](/demo/assets/correlation_heatmap.png)
+![demographics_and_basic_investing.png](/demo/assets/demographics_and_basic_investing.png)
+![investment_drivers.png](/demo/assets/investment_drivers.png)
+</File>
+
+<Code>
+```python
+# Gender vs Objective and Factor cross-tabs + avg rankings by gender
+ct1 = pd.crosstab(df["gender"], df["Objective"], normalize="index").round(3)
+ct2 = pd.crosstab(df["gender"], df["Factor"], normalize="index").round(3)
+ct1.to_csv("average_rankings.csv")
+print(ct1.to_string())
+print(ct2.to_string())
+# Reasons
+for col in ["Reason_Equity","Reason_Mutual","Reason_Bonds","Reason_FD"]:
+    print(col, df[col].value_counts().to_dict())
+```
+</Code>
+
+<Execute>
+```
+Objective  Capital Appreciation Growth Income
+Female                0.667   0.20  0.133
+Male                  0.64    0.32   0.04
+Reason_Equity: {'Capital Appreciation': 30, 'Dividend': 8}
+Reason_Mutual: {'Better Returns': 24, 'Fund Diversification': 13}
+```
+</Execute>
+
+<File>
+![reasons_analysis.png](/demo/assets/reasons_analysis.png)
+![average_rankings.png](/demo/assets/average_rankings.png)
+![savings_objectives.png](/demo/assets/savings_objectives.png)
+![source_and_monitor.png](/demo/assets/source_and_monitor.png)
+</File>
+
+<Answer>
+40 investors — predominantly male (25/40) — show clear preference hierarchy: **PPF (2.03) > Mutual Funds (2.55) > Equity (3.47) > Fixed Deposits (3.57)** when ranking 1=best. Gold and Debentures rank lowest (>5.7).
+
+**Drivers:** Returns dominates (25/40), followed by Risk (14). 30/40 cite Capital Appreciation for Equity. Objectives are Capital Appreciation (26) and Growth (11).
+
+**Demographic splits:** Gender barely differentiates objectives (66% of females vs 64% of males seek Cap Appreciation) but males rank PPF even higher (1.84 vs 2.33) and Fixed Deposits higher (3.2 vs 4.2). Correlation between Mutual_Funds and PPF (0.18) suggests conservative investors like both.
+
+Artifacts generated — correlation heatmap, demographics breakdown, investment drivers and ranking charts — plus a full HTML report. Dataset is clean (0 missing) and ready for deeper modeling (e.g., predict Objective from rankings + demographics).
+</Answer>

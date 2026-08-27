@@ -1,0 +1,17 @@
+Gender vs Objective:
+Objective  Capital Appreciation  Growth    Income
+gender                                           
+Female                 0.666667    0.20  0.133333
+Male                   0.640000    0.32  0.040000
+
+Gender vs Factor:
+Factor  Locking Period  Returns      Risk
+gender                                   
+Female        0.066667     0.60  0.333333
+Male          0.000000     0.64  0.360000
+
+Average Rankings by Gender:
+        Mutual_Funds  Equity_Market  Debentures  Government_Bonds  Fixed_Deposits       PPF      Gold
+gender                                                                                               
+Female      2.733333       3.333333        5.20          4.333333             4.2  2.333333  5.866667
+Male        2.440000       3.560000        6.08          4.840000             3.2  1.840000  6.040000

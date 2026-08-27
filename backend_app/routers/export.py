@@ -3,12 +3,13 @@ from __future__ import annotations
 import logging
 import traceback
 
-from fastapi import APIRouter, Body, HTTPException
+from fastapi import APIRouter, Body, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 import httpx
 
 from ..services.exporter import export_html_report_from_body, export_report_from_body
+from ..services.quota import enforce_access
 
 log = logging.getLogger(__name__)
 
@@ -16,7 +17,8 @@ router = APIRouter()
 
 
 @router.post("/export/report")
-async def export_report(body: dict = Body(...)):
+async def export_report(request: Request, body: dict = Body(...)):
+    await enforce_access(request, body.get("session_id"))
     try:
         return JSONResponse(export_report_from_body(body))
     except ValueError as exc:
@@ -28,7 +30,8 @@ async def export_report(body: dict = Body(...)):
 
 
 @router.post("/export/report/html")
-async def export_report_html(body: dict = Body(...)):
+async def export_report_html(request: Request, body: dict = Body(...)):
+    await enforce_access(request, body.get("session_id"))
     try:
         result = await export_html_report_from_body(body)
         return JSONResponse(result)

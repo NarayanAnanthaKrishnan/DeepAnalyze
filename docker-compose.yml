@@ -1,0 +1,53 @@
+# ── Swaylytics — VPS compose layout ───────────────────────────────────
+# Usage:
+#   cp .env.example .env   (fill values)
+#   docker compose up -d --build
+#
+# Caddy terminates TLS automatically for the domain in caddy/Caddyfile.compose.
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.hf
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
+    image: swaylytics
+    command: ["python", "-m", "uvicorn", "backend_app.app:app", "--host", "0.0.0.0", "--port", "8200"]
+    env_file: .env
+    environment:
+      DEEPANALYZE_BACKEND_HOST: 0.0.0.0
+    volumes:
+      - workspace:/app/workspace
+      - trialdata:/app/data
+    restart: unless-stopped
+
+  frontend:
+    image: swaylytics
+    depends_on: [backend]
+    working_dir: /app/frontend
+    command: ["node", "server.js"]
+    environment:
+      HOSTNAME: 127.0.0.1
+      PORT: "3000"
+    # NEXT_PUBLIC_* vars were baked at build time (see Dockerfile.hf args)
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    depends_on: [backend, frontend]
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile.compose:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+
+volumes:
+  workspace:
+  trialdata:
+  caddy_data:
+  caddy_config:

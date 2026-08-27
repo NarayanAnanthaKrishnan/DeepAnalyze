@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: swaylytics-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /docs
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-3-flash-preview
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: GATE_ENFORCED
+        value: true
+      - key: ADMIN_KEY
+        sync: false
+      - key: ADMIN_EMAILS
+        sync: false
+      - key: DEMO_MAX_ROUNDS
+        value: 8
+      - key: ALLOWED_ORIGINS
+        sync: false

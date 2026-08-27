@@ -34,10 +34,10 @@ function AnalyzeContent() {
     // Guard against React Strict Mode double-invocation
     if (consumedRef.current) return;
 
-    // Redirect to landing — don't stop any backend stream; other sessions
+    // Redirect to try page — don't stop any backend stream; other sessions
     // may still be legitimately running.
     const redirectToHome = () => {
-      router.replace("/");
+      router.replace("/try");
     };
 
     if (!tid) {

@@ -1,0 +1,69 @@
+{
+  "datasetName": "Finance_data.csv",
+  "prompt": "Please perform exploratory data analysis on the current dataset. Start with schema & data quality, then distributions, correlations and demographics — surface what drives investment choice.",
+  "reportTheme": "literature",
+  "reportUrl": "/demo/report.html",
+  "transcriptUrl": "/demo/transcript.json",
+  "artifacts": [
+    {
+      "name": "correlation_heatmap.png",
+      "path": "/demo/assets/correlation_heatmap.png",
+      "size": 74568,
+      "is_generated": true
+    },
+    {
+      "name": "demographics_and_basic_investing.png",
+      "path": "/demo/assets/demographics_and_basic_investing.png",
+      "size": 62123,
+      "is_generated": true
+    },
+    {
+      "name": "investment_drivers.png",
+      "path": "/demo/assets/investment_drivers.png",
+      "size": 71570,
+      "is_generated": true
+    },
+    {
+      "name": "reasons_analysis.png",
+      "path": "/demo/assets/reasons_analysis.png",
+      "size": 50180,
+      "is_generated": true
+    },
+    {
+      "name": "average_rankings.png",
+      "path": "/demo/assets/average_rankings.png",
+      "size": 23264,
+      "is_generated": true
+    },
+    {
+      "name": "savings_objectives.png",
+      "path": "/demo/assets/savings_objectives.png",
+      "size": 12275,
+      "is_generated": true
+    },
+    {
+      "name": "source_and_monitor.png",
+      "path": "/demo/assets/source_and_monitor.png",
+      "size": 28604,
+      "is_generated": true
+    },
+    {
+      "name": "descriptive_stats.csv",
+      "path": "/demo/assets/descriptive_stats.csv",
+      "size": 529,
+      "is_generated": true
+    },
+    {
+      "name": "final_eda_summary.txt",
+      "path": "/demo/assets/final_eda_summary.txt",
+      "size": 870,
+      "is_generated": true
+    },
+    {
+      "name": "data_info.txt",
+      "path": "/demo/assets/data_info.txt",
+      "size": 6361,
+      "is_generated": true
+    }
+  ]
+}

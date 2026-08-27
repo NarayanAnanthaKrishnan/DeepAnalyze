@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, File, Query, UploadFile
+from fastapi import APIRouter, File, HTTPException, Query, Request, UploadFile
 
+from ..services.quota import enforce_access
 from ..services import workspace as workspace_service
+from ..settings import settings
 
 
 router = APIRouter()
@@ -87,26 +89,33 @@ async def delete_workspace_dir(
 
 @router.get("/proxy")
 async def proxy(url: str):
+    if not settings.enable_proxy:
+        raise HTTPException(status_code=404, detail="Proxy disabled on this deployment")
     return await workspace_service.proxy_external_file(url)
 
 
 @router.post("/workspace/upload")
 async def upload_files(
+    request: Request,
     files: list[UploadFile] = File(...),
     session_id: str = Query("default"),
 ):
+    await enforce_access(request, session_id)
     return await workspace_service.upload_files_to_workspace(session_id, files)
 
 
 @router.delete("/workspace/clear")
-async def clear_workspace(session_id: str = Query("default")):
+async def clear_workspace(request: Request, session_id: str = Query("default")):
+    await enforce_access(request, session_id)
     return workspace_service.clear_workspace(session_id)
 
 
 @router.post("/workspace/upload-to")
 async def upload_to_dir(
+    request: Request,
     dir: str = Query("", description="relative directory under workspace"),
     files: list[UploadFile] = File(...),
     session_id: str = Query("default"),
 ):
+    await enforce_access(request, session_id)
     return await workspace_service.upload_files_to_dir(session_id, dir, files)

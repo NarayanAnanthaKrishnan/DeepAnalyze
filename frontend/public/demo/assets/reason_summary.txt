@@ -1,0 +1,4 @@
+Reason_Equity: {'Capital Appreciation': 30, 'Dividend': 8, 'Liquidity': 2}
+Reason_Mutual: {'Better Returns': 24, 'Fund Diversification': 13, 'Tax Benefits': 3}
+Reason_Bonds: {'Assured Returns': 26, 'Safe Investment': 13, 'Tax Incentives': 1}
+Reason_FD: {'Risk Free': 19, 'Fixed Returns': 18, 'High Interest Rates': 3}

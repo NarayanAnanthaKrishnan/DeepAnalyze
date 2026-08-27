@@ -1,0 +1,39 @@
+# ── VPS public router ─────────────────────────────────────────────────
+# Replace swaylytics.example.com with your DNS name.
+# Caddy obtains/renews TLS certificates automatically.
+
+swaylytics.example.com {
+
+	# Streaming endpoints must flush immediately (SSE)
+	(handle_api) {
+		reverse_proxy backend:8200 {
+			flush_interval -1
+		}
+	}
+
+	handle /workspace/* {
+		import handle_api
+	}
+	handle /chat/* {
+		import handle_api
+	}
+	handle /export/* {
+		import handle_api
+	}
+	handle /gate/* {
+		import handle_api
+	}
+	handle /admin/* {
+		import handle_api
+	}
+	handle /proxy {
+		import handle_api
+	}
+	handle /execute {
+		import handle_api
+	}
+
+	handle {
+		reverse_proxy frontend:3000
+	}
+}

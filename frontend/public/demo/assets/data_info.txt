@@ -1,0 +1,47 @@
+Dataset Info:
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 40 entries, 0 to 39
+Data columns (total 24 columns):
+ #   Column                             Non-Null Count  Dtype 
+---  ------                             --------------  ----- 
+ 0   gender                             40 non-null     object
+ 1   age                                40 non-null     int64 
+ 2   Investment_Avenues                 40 non-null     object
+ 3   Mutual_Funds                       40 non-null     int64 
+ 4   Equity_Market                      40 non-null     int64 
+ 5   Debentures                         40 non-null     int64 
+ 6   Government_Bonds                   40 non-null     int64 
+ 7   Fixed_Deposits                     40 non-null     int64 
+ 8   PPF                                40 non-null     int64 
+ 9   Gold                               40 non-null     int64 
+ 10  Stock_Marktet                      40 non-null     object
+ 11  Factor                             40 non-null     object
+ 12  Objective                          40 non-null     object
+ 13  Purpose                            40 non-null     object
+ 14  Duration                           40 non-null     object
+ 15  Invest_Monitor                     40 non-null     object
+ 16  Expect                             40 non-null     object
+ 17  Avenue                             40 non-null     object
+ 18  What are your savings objectives?  40 non-null     object
+ 19  Reason_Equity                      40 non-null     object
+ 20  Reason_Mutual                      40 non-null     object
+ 21  Reason_Bonds                       40 non-null     object
+ 22  Reason_FD                          40 non-null     object
+ 23  Source                             40 non-null     object
+dtypes: int64(8), object(16)
+memory usage: 7.6+ KB
+
+
+Summary Statistics:
+       gender        age Investment_Avenues  Mutual_Funds  Equity_Market  Debentures  Government_Bonds  Fixed_Deposits        PPF       Gold Stock_Marktet   Factor             Objective          Purpose   Duration Invest_Monitor   Expect       Avenue What are your savings objectives?         Reason_Equity   Reason_Mutual     Reason_Bonds  Reason_FD                 Source
+count      40  40.000000                 40     40.000000      40.000000   40.000000         40.000000       40.000000  40.000000  40.000000            40       40                    40               40         40             40       40           40                                40                    40              40               40         40                     40
+unique      2        NaN                  2           NaN            NaN         NaN               NaN             NaN        NaN        NaN             2        3                     3                3          4              3        3            4                                 3                     3               3                3          3                      4
+top      Male        NaN                Yes           NaN            NaN         NaN               NaN             NaN        NaN        NaN           Yes  Returns  Capital Appreciation  Wealth Creation  3-5 years        Monthly  20%-30%  Mutual Fund                   Retirement Plan  Capital Appreciation  Better Returns  Assured Returns  Risk Free  Financial Consultants
+freq       25        NaN                 37           NaN            NaN         NaN               NaN             NaN        NaN        NaN            35       25                    26               32         19             29       32           18                                24                    30              24               26         19                     16
+mean      NaN  27.800000                NaN      2.550000       3.475000    5.750000          4.650000        3.575000   2.025000   5.975000           NaN      NaN                   NaN              NaN        NaN            NaN      NaN          NaN                               NaN                   NaN             NaN              NaN        NaN                    NaN
+std       NaN   3.560467                NaN      1.197219       1.131994    1.675617          1.369072        1.795828   1.609069   1.143263           NaN      NaN                   NaN              NaN        NaN            NaN      NaN          NaN                               NaN                   NaN             NaN              NaN        NaN                    NaN
+min       NaN  21.000000                NaN      1.000000       1.000000    1.000000          1.000000        1.000000   1.000000   2.000000           NaN      NaN                   NaN              NaN        NaN            NaN      NaN          NaN                               NaN                   NaN             NaN              NaN        NaN                    NaN
+25%       NaN  25.750000                NaN      2.000000       3.000000    5.000000          4.000000        2.750000   1.000000   6.000000           NaN      NaN                   NaN              NaN        NaN            NaN      NaN          NaN                               NaN                   NaN             NaN              NaN        NaN                    NaN
+50%       NaN  27.000000                NaN      2.000000       4.000000    6.500000          5.000000        3.500000   1.000000   6.000000           NaN      NaN                   NaN              NaN        NaN            NaN      NaN          NaN                               NaN                   NaN             NaN              NaN        NaN                    NaN
+75%       NaN  30.000000                NaN      3.000000       4.000000    7.000000          5.000000        5.000000   2.250000   7.000000           NaN      NaN                   NaN              NaN        NaN            NaN      NaN          NaN                               NaN                   NaN             NaN              NaN        NaN                    NaN
+max       NaN  35.000000                NaN      7.000000       6.000000    7.000000          7.000000        7.000000   6.000000   7.000000           NaN      NaN                   NaN              NaN        NaN            NaN      NaN          NaN                               NaN                   NaN             NaN              NaN        NaN                    NaN

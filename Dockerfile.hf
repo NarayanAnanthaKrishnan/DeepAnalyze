@@ -1,0 +1,64 @@
+# ── Stage 1: build the Next.js frontend ───────────────────────────────
+FROM node:20-slim AS web-builder
+
+WORKDIR /build/frontend
+COPY frontend/package.json frontend/package-lock.json* ./
+RUN npm ci
+
+COPY frontend/ .
+ENV NEXT_OUTPUT_STANDALONE=1 \
+    NEXT_TELEMETRY_DISABLED=1 \
+    NEXT_PUBLIC_BACKEND_URL=""
+# Build-time public envs (can be overridden with --build-arg)
+ARG NEXT_PUBLIC_SUPABASE_URL=""
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY=""
+ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL \
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+RUN npm run build
+
+# ── Stage 2: runtime (python + node + caddy) ──────────────────────────
+FROM python:3.11-slim-bookworm
+
+ENV PYTHONUNBUFFERED=1 \
+    MPLBACKEND=Agg \
+    QT_QPA_PLATFORM=offscreen \
+    NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        curl ca-certificates gnupg \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && curl -fsSL "https://github.com/caddyserver/caddy/releases/download/v2.8.4/caddy_2.8.4_linux_amd64.tar.gz" \
+        | tar -xz -C /usr/local/bin caddy \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Backend
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+COPY backend_app ./backend_app
+COPY backend.py ./
+
+# Frontend (standalone output + static assets + public folder)
+COPY --from=web-builder /build/frontend/.next/standalone ./frontend
+COPY --from=web-builder /build/frontend/.next/static ./frontend/.next/static
+COPY --from=web-builder /build/frontend/public ./frontend/public
+
+# Caddy routes a single public port to both services
+COPY caddy/Caddyfile.hf /etc/caddy/Caddyfile
+COPY deploy/entrypoint-hf.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Non-root user owns everything (executed code runs unprivileged)
+RUN useradd --create-home --uid 1000 sway \
+    && mkdir -p /app/workspace /app/data \
+    && chown -R sway:sway /app
+USER sway
+
+WORKDIR /app/frontend
+EXPOSE 7860
+WORKDIR /app
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

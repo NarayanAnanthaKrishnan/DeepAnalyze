@@ -40,9 +40,9 @@ function cleanupStaleTransfers(): void {
   }
 }
 
-export function storeTransfer(data: TransferData): string {
+export function storeTransfer(data: TransferData, presetId?: string): string {
   cleanupStaleTransfers();
-  const id = crypto.randomUUID();
+  const id = presetId || crypto.randomUUID();
   pending.set(id, data);
 
   // Persist text-only fields to sessionStorage for recovery

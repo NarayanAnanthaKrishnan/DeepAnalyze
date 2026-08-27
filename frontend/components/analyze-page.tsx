@@ -95,6 +95,13 @@ interface AnalyzePageProps {
   engine: EngineType;
   sessionId: string;
   recoverySnapshot?: SessionSnapshot | null;
+  /** Pre-recorded "proof" session: renders instantly, zero backend calls */
+  demo?: {
+    content: string;
+    artifacts: WorkspaceFile[];
+    reportUrl: string;
+    datasetName: string;
+  } | null;
 }
 
 interface ChatMessage {
@@ -160,9 +167,11 @@ export function AnalyzePage({
   engine,
   sessionId,
   recoverySnapshot,
+  demo = null,
 }: AnalyzePageProps) {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
+  const isDemo = Boolean(demo);
 
   // ── State ─────────────────────────────────────────────────────────
   const [phase, setPhase] = useState<Phase>("uploading");
@@ -237,6 +246,12 @@ export function AnalyzePage({
     return Array.from(seen.values());
   }, [completedTurns, dedupedArtifacts]);
 
+  /** Resolve an artifact to a clickable/downloadable URL (static path in demo mode). */
+  const artifactUrl = useCallback(
+    (file: WorkspaceFile) => (demo ? file.path : getDownloadUrl(sessionId, file.path)),
+    [demo, sessionId]
+  );
+
   // ── Auto-open right panel when analysis completes ──────────────────
   useEffect(() => {
     if (phase === "complete" && allArtifacts.length > 0) {
@@ -249,6 +264,7 @@ export function AnalyzePage({
 
   // Helper: write current state as a snapshot
   const writeSnapshot = useCallback(() => {
+    if (isDemo) return;
     try {
       const content = pendingContentRef.current || accumulatedContent;
       if (!content && phase === "streaming") return; // nothing to save yet
@@ -262,7 +278,7 @@ export function AnalyzePage({
       };
       sessionStorage.setItem(`snapshot:${sessionId}`, JSON.stringify(snap));
     } catch { /* quota — non-critical */ }
-  }, [sessionId, prompt, reportTheme, presetId, accumulatedContent, completedTurns, messages, workspaceFileNames, plan, engine, reportStatus, reportUrl, reportFallback, phase]);
+  }, [isDemo, sessionId, prompt, reportTheme, presetId, accumulatedContent, completedTurns, messages, workspaceFileNames, plan, engine, reportStatus, reportUrl, reportFallback, phase]);
 
   // Save immediately on completion (and whenever completion-phase state changes)
   useEffect(() => {
@@ -272,7 +288,7 @@ export function AnalyzePage({
 
   // Save periodically during streaming so HMR/refresh can recover partial content
   useEffect(() => {
-    if (phase !== "streaming") {
+    if (phase !== "streaming" || isDemo) {
       if (snapshotTimerRef.current) { clearInterval(snapshotTimerRef.current); snapshotTimerRef.current = null; }
       return;
     }
@@ -292,11 +308,11 @@ export function AnalyzePage({
       } catch { /* quota — non-critical */ }
     }, 3000);
     return () => { if (snapshotTimerRef.current) { clearInterval(snapshotTimerRef.current); snapshotTimerRef.current = null; } };
-  }, [phase, sessionId, prompt, reportTheme, presetId, completedTurns, messages, workspaceFileNames, plan, engine]);
+  }, [phase, sessionId, prompt, reportTheme, presetId, completedTurns, messages, workspaceFileNames, plan, engine, isDemo]);
 
   // ── Auto-trigger HTML report generation on completion ─────────────
   useEffect(() => {
-    if (phase !== "complete" || reportStatus !== "idle") return;
+    if (phase !== "complete" || reportStatus !== "idle" || isDemo) return;
     setReportStatus("generating");
     const genId = ++reportGenIdRef.current;
     const controller = new AbortController();
@@ -326,7 +342,7 @@ export function AnalyzePage({
         }
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, reportStatus]);
+  }, [phase, reportStatus, isDemo]);
 
   const handleCancelReport = useCallback(() => {
     reportAbortRef.current?.abort();
@@ -447,6 +463,21 @@ export function AnalyzePage({
 
   // ── Initial upload ────────────────────────────────────────────────
   useEffect(() => {
+    // Demo ("proof") mode: hydrate a pre-recorded session instantly.
+    if (demo) {
+      setPhase("complete");
+      setAccumulatedContent(demo.content);
+      pendingContentRef.current = demo.content;
+      displayedContentRef.current = demo.content;
+      setMessages([{ role: "user", content: prompt }]);
+      setWorkspaceFileNames([demo.datasetName]);
+      setArtifacts(demo.artifacts);
+      setUploadProgress(100);
+      setReportStatus("ready");
+      setReportUrl(demo.reportUrl);
+      return;
+    }
+
     // Restore from snapshot (completed or interrupted session recovery)
     if (recoverySnapshot) {
       // Always restore as "complete" — even if the snapshot was mid-stream,
@@ -574,8 +605,10 @@ export function AnalyzePage({
     // Stop any active streaming first
     abortControllerRef.current?.abort();
     stopRafLoop();
-    try { await stopGeneration(sessionId); } catch { /* */ }
-    try { await clearWorkspace(sessionId); } catch { /* */ }
+    if (!isDemo) {
+      try { await stopGeneration(sessionId); } catch { /* */ }
+      try { await clearWorkspace(sessionId); } catch { /* */ }
+    }
     // Clean up sessionStorage entries for this session
     try {
       sessionStorage.removeItem(`snapshot:${sessionId}`);
@@ -585,8 +618,8 @@ export function AnalyzePage({
         clearTransfer(tid);
       }
     } catch { /* noop */ }
-    router.push("/");
-  }, [sessionId, router, stopRafLoop]);
+    router.push(isDemo ? "/demo" : "/");
+  }, [sessionId, router, stopRafLoop, isDemo]);
 
   const handleFollowUpFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) setFollowUpFiles((prev) => [...prev, ...Array.from(e.target.files!)]);
@@ -759,10 +792,14 @@ export function AnalyzePage({
       <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-thin">
         {uniqueLinks.map((f, i) => {
           const Icon = getFileIcon(f.name);
-          // Fix path: if URL is already a full backend URL, use as-is. Otherwise build it.
-          const url = f.url.startsWith("http") || f.url.startsWith("/workspace")
-            ? (f.url.startsWith("/") ? `http://localhost:8200${f.url}` : f.url)
-            : getDownloadUrl(sessionId, f.name);
+          // Fix path: if URL is already absolute or backend-relative, use as-is. Otherwise build it.
+          const url = f.url.startsWith("http")
+            ? f.url
+            : f.url.startsWith("/workspace")
+              ? `${BACKEND_URL}${f.url}`
+              : f.url.startsWith("/demo/")
+                ? f.url
+                : artifactUrl({ name: f.name, path: f.name, size: 0 });
 
           return (
             <a key={i} href={url} target="_blank" rel="noopener noreferrer"
@@ -878,7 +915,7 @@ export function AnalyzePage({
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
           {deduped.map((file, i) => {
             const Icon = getFileIcon(file.name);
-            const url = getDownloadUrl(sessionId, file.path);
+            const url = artifactUrl(file);
             const isImage = [".png", ".jpg", ".jpeg", ".gif", ".webp"].some((ext) => file.name.endsWith(ext));
             return (
               <motion.a key={`${keyPrefix}art-${i}`} href={url} target="_blank" rel="noopener noreferrer"
@@ -1138,6 +1175,20 @@ export function AnalyzePage({
                   </button>
                 </div>
                 <input ref={followUpFileInputRef} type="file" multiple className="hidden" onChange={handleFollowUpFileChange} />
+                {isDemo ? (
+                  <div className="flex items-center justify-center gap-3 border border-amber-500/20 bg-amber-500/[0.04] backdrop-blur-md px-4 py-3">
+                    <Sparkles className="size-3.5 text-amber-500/70 shrink-0" />
+                    <p className="font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.2em] text-amber-600/80 dark:text-amber-400/80 text-center leading-relaxed">
+                      Pre-completed session — this is a recorded run
+                    </p>
+                    <button
+                      onClick={() => router.push("/try")}
+                      className="flex-shrink-0 font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-bold text-primary hover:underline underline-offset-4 whitespace-nowrap"
+                    >
+                      Start your own →
+                    </button>
+                  </div>
+                ) : (
                 <PromptInput value={followUpInput} onValueChange={setFollowUpInput}
                   isLoading={phase === "streaming"} onSubmit={phase === "streaming" ? handleStop : handleSendFollowUp}
                   disabled={phase === "uploading"} className="!rounded-none border border-primary/20 bg-primary/5 backdrop-blur-md shadow-2xl shadow-primary/10 relative group transition-colors hover:border-primary/40 focus-within:border-primary/60">
@@ -1205,7 +1256,7 @@ export function AnalyzePage({
                       </Popover>
 
                       {/* Clever Status Shutter Pill */}
-                      {phase === "complete" && (
+                      {phase === "complete" && !isDemo && (
                         <div className="relative h-8 overflow-hidden flex items-center">
                           <AnimatePresence mode="wait">
                             {reportStatus !== "generating" ? (
@@ -1288,6 +1339,7 @@ export function AnalyzePage({
 
                   </PromptInputActions>
                 </PromptInput>
+                )}
               </div>
             </div>
 
@@ -1329,7 +1381,7 @@ export function AnalyzePage({
                     <div className="mx-5 h-px bg-gradient-to-r from-border/60 via-border/30 to-transparent" />
 
                     {/* Download All */}
-                    {allArtifacts.length > 0 && (
+                    {allArtifacts.length > 0 && !isDemo && (
                       <div className="px-5 pt-3 pb-2 flex-shrink-0">
                         <a
                           href={getDownloadBundleUrl(sessionId)}
@@ -1356,7 +1408,7 @@ export function AnalyzePage({
                         <div className="flex flex-col gap-1.5">
                           {allArtifacts.map((file, i) => {
                             const Icon = getFileIcon(file.name);
-                            const url = getDownloadUrl(sessionId, file.path);
+                            const url = artifactUrl(file);
                             const isImage = [".png", ".jpg", ".jpeg", ".gif", ".webp"].some((ext) => file.name.endsWith(ext));
                             return (
                               <motion.a

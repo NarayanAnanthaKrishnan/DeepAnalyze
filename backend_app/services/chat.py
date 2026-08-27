@@ -35,6 +35,53 @@ HEYWHALE_API_BASE = (
 )
 REMOTE_STOP_SEQUENCES = ["</Code>", "</Answer>"]
 
+# ── Rounds-budget directives (graceful wind-down, never mid-section cuts) ──
+_WRAPUP_DIRECTIVE = (
+    "[System] You have used your full analysis budget of rounds. Do NOT write any "
+    "new <Code>. You now have everything you need: synthesize the findings from all "
+    "executed steps and produce your complete final <Answer> section NOW. The "
+    "<Answer> must be self-contained and reference the key numbers, charts and "
+    "files produced so far."
+)
+_FINAL_DIRECTIVE = (
+    "[System] FINAL TURN. This is the last response you can make. Respond with "
+    "ONLY a complete <Answer>...</Answer> section summarizing everything found so "
+    "far. Writing code now is forbidden."
+)
+
+
+def _extract_last_findings_text(conversation: list[dict[str, Any]]) -> str:
+    for message in reversed(conversation):
+        if message.get("role") != "assistant":
+            continue
+        text = str(message.get("content") or "")
+        match = re.findall(r"<Understand>(.*?)</Understand>", text, re.DOTALL)
+        if not match:
+            match = re.findall(r"<Analyze>(.*?)</Analyze>", text, re.DOTALL)
+        if match:
+            return match[-1].strip()
+    return ""
+
+
+def _build_forced_answer(conversation: list[dict[str, Any]]) -> str:
+    findings = _extract_last_findings_text(conversation)[:2000]
+    lines = [
+        "\n<Answer>",
+        "[Analysis concluded automatically — the maximum number of analysis rounds "
+        "was reached.]",
+    ]
+    if findings:
+        lines += ["", "Findings so far:", "", findings]
+    else:
+        lines += [
+            "",
+            "The agent reached its round budget before producing a final narrative. "
+            "Please review the executed steps, printed outputs and generated "
+            "artifacts above.",
+        ]
+    lines.append("</Answer>\n")
+    return "\n".join(lines)
+
 
 @dataclass(frozen=True)
 class ChatRuntimeConfig:
@@ -470,8 +517,39 @@ def bot_stream(
     )
 
     try:
+        max_rounds = max(1, settings.demo_max_rounds)
+        turns_taken = 0
+        wrapup_stage = 0  # 0 = normal, 1 = wrap-up sent, 2 = final-answer-only sent
         while not finished:
             if stop_event.is_set():
+                break
+
+            # ── Rounds budget: graceful wind-down ──
+            turns_taken += 1
+            if turns_taken == max_rounds + 1 and wrapup_stage < 1:
+                wrapup_stage = 1
+                log.info(
+                    "Session %s hit rounds budget (%d) — requesting final answer",
+                    session_id,
+                    max_rounds,
+                )
+                conversation.append({"role": "execute", "content": _WRAPUP_DIRECTIVE})
+                yield (
+                    "\n<RouterGuidance>\n[Analysis budget reached — wrapping up with "
+                    "a final answer.]\n</RouterGuidance>\n"
+                )
+            elif turns_taken == max_rounds + 2 and wrapup_stage < 2:
+                wrapup_stage = 2
+                conversation.append({"role": "execute", "content": _FINAL_DIRECTIVE})
+                yield (
+                    "\n<RouterGuidance>\n[Final turn — the agent must answer now.]\n"
+                    "</RouterGuidance>\n"
+                )
+            elif turns_taken > max_rounds + 2:
+                forced = _build_forced_answer(conversation)
+                yield forced
+                conversation.append({"role": "assistant", "content": forced.strip()})
+                finished = True
                 break
 
             cur_res = ""

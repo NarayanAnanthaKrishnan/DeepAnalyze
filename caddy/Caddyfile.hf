@@ -1,0 +1,42 @@
+# Internal router for the single-container (HF Spaces) layout.
+# Public port -> { API :8200 | Next :3000 }
+
+{
+	admin off
+}
+
+:7860 {
+
+	# Streaming endpoints must flush immediately (SSE)
+	(handle_api) {
+		reverse_proxy 127.0.0.1:8200 {
+			flush_interval -1
+		}
+	}
+
+	handle /workspace/* {
+		import handle_api
+	}
+	handle /chat/* {
+		import handle_api
+	}
+	handle /export/* {
+		import handle_api
+	}
+	handle /gate/* {
+		import handle_api
+	}
+	handle /admin/* {
+		import handle_api
+	}
+	handle /proxy {
+		import handle_api
+	}
+	handle /execute {
+		import handle_api
+	}
+
+	handle {
+		reverse_proxy 127.0.0.1:3000
+	}
+}

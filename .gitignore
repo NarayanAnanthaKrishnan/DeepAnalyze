@@ -13,6 +13,9 @@ wheels/
 
 # Virtual environment
 .venv/
+venv/
+.venv
+
 
 # IDE
 .idea/
@@ -36,3 +39,9 @@ wheels/
 **/workspace/
 **/CLAUDE.md
 **/logs/
+
+# Trial DB (SQLite fallback)
+data/
+
+# Keep the env template in VCS
+!.env.example
