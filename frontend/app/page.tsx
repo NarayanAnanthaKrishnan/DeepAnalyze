@@ -24,6 +24,12 @@ import {
   ZapOff,
   Zap,
   Sparkles,
+  BarChart3,
+  MessageCircle,
+  Workflow,
+  Database,
+  Shield,
+  GitBranch,
 } from "lucide-react";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -80,6 +86,39 @@ const FEATURES = [
     icon: Activity,
     title: "Watch it think",
     body: "Every reasoning trace, line of code and execution result streams live over SSE. No black box — you see exactly what happens and when.",
+  },
+];
+
+const FUTURE = [
+  {
+    icon: BarChart3,
+    title: "Power BI, one click",
+    body: "Turn any generated CSV into a DAX measure pack + relationship schema. Export a .json bundle and a playbook — no manual DAX writing, direct to Power BI import.",
+  },
+  {
+    icon: MessageCircle,
+    title: "Ask your data",
+    body: "Every chart, table and transcript chunk gets embedded. A floating “Ask the data” panel answers with citations to the actual files, not hallucinations.",
+  },
+  {
+    icon: Workflow,
+    title: "True multi-agent",
+    body: "Planner → coder → critic as separate agents with explicit tool-calling, rather than one model juggling tags. Cleaner traces, better recovery.",
+  },
+  {
+    icon: Database,
+    title: "Deeper EDA lab",
+    body: "Auto feature engineering, smart statistical test selection, a SQL workbench over your SQLite uploads, and anomaly scoring — beyond the current pass.",
+  },
+  {
+    icon: Shield,
+    title: "Built for prod",
+    body: "Cost caps per run, workspace TTL cleanup, real Docker sandbox, and server-side session auth — so the demo scales without surprises.",
+  },
+  {
+    icon: GitBranch,
+    title: "Measured quality",
+    body: "DS1000 harness from benchmarks/ds1000 wired into CI, per-engine prompt tuning, and report-quality evals — so every change is proven.",
   },
 ];
 
@@ -359,6 +398,57 @@ export default function ShowcasePage() {
             </motion.div>
           ))}
         </div>
+      </section>
+
+      {/* ── Future Scope ── */}
+      <section className="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-6 py-24 border-t border-border/30">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.8, ease }}
+        >
+          <p className="font-mono text-[9px] uppercase tracking-[0.3em] text-primary font-bold">
+            What&apos;s next
+          </p>
+          <h2 className="mt-3 font-display text-3xl sm:text-5xl font-medium tracking-tight lowercase">
+            built to grow.
+            <span className="text-primary">.</span>
+          </h2>
+          <p className="mt-4 max-w-2xl text-sm sm:text-base text-muted-foreground leading-relaxed">
+            The seams are already there — workspace + generated index + Gemini as the stable core. Here&apos;s where it goes next, in plain terms.
+          </p>
+        </motion.div>
+
+        <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {FUTURE.map((item, i) => (
+            <motion.div
+              key={item.title}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-40px" }}
+              transition={{ duration: 0.65, delay: (i % 3) * 0.1, ease }}
+              className="relative p-6 sm:p-7 border border-border/40 bg-background/60 hover:border-primary/25 hover:bg-background transition-all hover:-translate-y-0.5"
+            >
+              <item.icon className="size-5 text-primary/70" />
+              <h3 className="mt-4 font-display text-lg font-medium tracking-tight lowercase">
+                {item.title}
+                <span className="text-primary">.</span>
+              </h3>
+              <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
+            </motion.div>
+          ))}
+        </div>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          className="mt-10 text-center font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground/50"
+        >
+          Designed to be extended — not a one-off demo.
+        </motion.p>
       </section>
 
       {/* ── Visual slots (screenshots / GIF placeholders) ── */}

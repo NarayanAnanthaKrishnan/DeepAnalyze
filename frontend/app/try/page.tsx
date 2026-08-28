@@ -10,7 +10,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { AuthGateModal } from "@/components/auth-gate-modal";
 import { PromptInputEnhanced } from "@/components/prompt-input-enhanced";
 import { PresetSelector } from "@/components/preset-selector";
-import { storeTransfer, type EngineType } from "@/lib/transfer-store";
+import { storeTransfer } from "@/lib/transfer-store";
 import { startTrial, GateError } from "@/lib/trial";
 import { getVerifiedEmail, isAuthConfigured, signOutLocally } from "@/lib/supabase";
 import { Zap, ZapOff, Lock, ArrowLeft } from "lucide-react";
@@ -27,8 +27,6 @@ export default function TryPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [reportTheme, setReportTheme] = useState("literature");
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
-  const [planRouterEnabled, setPlanRouterEnabled] = useState(false);
-  const [engine, setEngine] = useState<EngineType>("deepanalyze");
   const [dynamicBgEnabled, setDynamicBgEnabled] = useState(false);
 
   // Gate state
@@ -37,27 +35,11 @@ export default function TryPage() {
   const [claimingTrial, setClaimingTrial] = useState(false);
   const pendingTidRef = useRef<string | null>(null);
 
-  // Hydrate from localStorage after mount (avoids SSR mismatch)
   useEffect(() => {
-    const storedPlan = localStorage.getItem("planRouterEnabled");
-    if (storedPlan === "true") setPlanRouterEnabled(true);
-
-    const storedEngine = localStorage.getItem("engine");
-    if (storedEngine === "gemini") setEngine("gemini");
-
     const storedBg = localStorage.getItem("dynamicBgEnabled");
     if (storedBg === "true") setDynamicBgEnabled(true);
-
     router.prefetch("/analyze");
   }, [router]);
-
-  useEffect(() => {
-    localStorage.setItem("planRouterEnabled", String(planRouterEnabled));
-  }, [planRouterEnabled]);
-
-  useEffect(() => {
-    localStorage.setItem("engine", engine);
-  }, [engine]);
 
   useEffect(() => {
     localStorage.setItem("dynamicBgEnabled", String(dynamicBgEnabled));
@@ -73,9 +55,7 @@ export default function TryPage() {
     promptText: string,
     filesSnapshot: File[],
     theme: string,
-    preset: string | null,
-    routerEnabled: boolean,
-    engineChoice: EngineType
+    preset: string | null
   ) => {
     storeTransfer(
       {
@@ -83,15 +63,14 @@ export default function TryPage() {
         files: filesSnapshot,
         reportTheme: theme,
         presetId: preset,
-        planRouterEnabled: engineChoice === "gemini" ? false : routerEnabled,
-        engine: engineChoice,
+        planRouterEnabled: false,
+        engine: "gemini",
       },
       tid
     );
     router.push(`/analyze?tid=${tid}`);
   };
 
-  /** Claim the trial for a pre-generated tid/session pair and navigate. */
   const claimAndLaunch = async (tid: string) => {
     const sid = makeSessionId();
     try {
@@ -99,7 +78,7 @@ export default function TryPage() {
     } catch { /* noop */ }
     try {
       await startTrial(sid);
-      launch(tid, input.trim(), files, reportTheme, selectedPresetId, planRouterEnabled, engine);
+      launch(tid, input.trim(), files, reportTheme, selectedPresetId);
       return true;
     } catch (err) {
       if (err instanceof GateError && err.code === "trial_used") {
@@ -122,8 +101,7 @@ export default function TryPage() {
     const tid = crypto.randomUUID();
 
     if (!isAuthConfigured()) {
-      // Gate not configured (local dev) — run directly.
-      launch(tid, input.trim(), files, reportTheme, selectedPresetId, planRouterEnabled, engine);
+      launch(tid, input.trim(), files, reportTheme, selectedPresetId);
       return;
     }
 
@@ -287,10 +265,6 @@ export default function TryPage() {
               onFilesChange={setFiles}
               reportTheme={reportTheme}
               onReportThemeChange={setReportTheme}
-              planRouterEnabled={planRouterEnabled}
-              onPlanRouterEnabledChange={setPlanRouterEnabled}
-              engine={engine}
-              onEngineChange={setEngine}
               isLoading={claimingTrial}
               onSubmit={handleAnalyze}
             />
