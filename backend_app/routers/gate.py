@@ -2,7 +2,11 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, Body, HTTPException, Request
+import shutil
+import time
+from pathlib import Path
+
+from fastapi import APIRouter, Body, HTTPException, Query, Request
 
 from ..services.auth import extract_bearer_token, verify_supabase_token
 from ..services.quota import (
@@ -112,4 +116,43 @@ async def admin_stats(request: Request):
         "recent": rows[:50],
         "max_rounds": settings.demo_max_rounds,
     }
+
+
+@router.post("/admin/cleanup")
+async def admin_cleanup(
+    request: Request,
+    days: int = Query(7, ge=1, le=30, description="delete sessions older than N days"),
+    dry_run: bool = Query(False, description="if true, only report without deleting"),
+):
+    if not is_admin_request(request):
+        raise HTTPException(status_code=403, detail={"error": "forbidden — X-Admin-Key required"})
+    workspace_base = Path(settings.workspace_base_dir).resolve()
+    if not workspace_base.exists():
+        return {"deleted": 0, "kept": 0, "dry_run": dry_run, "days": days}
+    cutoff = time.time() - days * 86400
+    deleted = kept = 0
+    candidates: list[str] = []
+    for child in workspace_base.iterdir():
+        if not child.is_dir():
+            continue
+        try:
+            mtime = child.stat().st_mtime
+        except OSError:
+            kept += 1
+            continue
+        if mtime < cutoff:
+            candidates.append(child.name)
+            if not dry_run:
+                try:
+                    shutil.rmtree(child)
+                    deleted += 1
+                except OSError as exc:
+                    log.warning("cleanup failed for %s: %s", child, exc)
+                    kept += 1
+            else:
+                deleted += 1
+        else:
+            kept += 1
+    log.info("cleanup dry_run=%s days=%s deleted=%s kept=%s", dry_run, days, deleted, kept)
+    return {"deleted": deleted, "kept": kept, "dry_run": dry_run, "days": days, "candidates": candidates[:20]}
 

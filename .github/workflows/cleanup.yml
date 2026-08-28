@@ -1,0 +1,40 @@
+name: cleanup
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Delete sessions older than N days"
+        required: false
+        default: "7"
+      dry_run:
+        description: "Dry run (true/false)"
+        required: false
+        default: "false"
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Cleanup old workspaces (7d)
+        env:
+          BACKEND: ${{ secrets.RENDER_BACKEND_URL || 'https://deepanalyze.onrender.com' }}
+          ADMIN_KEY: ${{ secrets.ADMIN_KEY }}
+          DAYS: ${{ inputs.days || '7' }}
+          DRY_RUN: ${{ inputs.dry_run || 'false' }}
+        run: |
+          if [ -z "$ADMIN_KEY" ]; then
+            echo "ADMIN_KEY secret not set — skipping. Set it in GitHub → Settings → Secrets → Actions."
+            exit 0
+          fi
+          echo "Calling $BACKEND/admin/cleanup?days=$DAYS&dry_run=$DRY_RUN ..."
+          curl -fsS -X POST \
+            -H "X-Admin-Key: $ADMIN_KEY" \
+            "$BACKEND/admin/cleanup?days=$DAYS&dry_run=$DRY_RUN" \
+            | python3 -m json.tool || {
+              echo "Cleanup failed — check Render logs and ADMIN_KEY"
+              exit 1
+            }
