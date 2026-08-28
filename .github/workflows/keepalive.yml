@@ -12,10 +12,10 @@ jobs:
     steps:
       - name: Ping Render backend
         run: |
-          set -e
+          set -eo pipefail
           BACKEND="${{ secrets.RENDER_BACKEND_URL || 'https://deepanalyze.onrender.com' }}"
+          BACKEND="${BACKEND%/}"
           echo "Pinging $BACKEND/gate/status ..."
-          # 3 attempts with 10s gap — Render free can take 30-60s to wake
           for i in 1 2 3; do
             if curl -fsS --max-time 30 "$BACKEND/gate/status" | head -c 200; then
               echo ""

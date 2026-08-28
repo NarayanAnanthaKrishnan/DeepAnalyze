@@ -26,12 +26,14 @@ jobs:
           DAYS: ${{ inputs.days || '7' }}
           DRY_RUN: ${{ inputs.dry_run || 'false' }}
         run: |
+          set -eo pipefail
+          BACKEND="${BACKEND%/}"
           if [ -z "$ADMIN_KEY" ]; then
             echo "ADMIN_KEY secret not set — skipping. Set it in GitHub → Settings → Secrets → Actions."
             exit 0
           fi
           echo "Calling $BACKEND/admin/cleanup?days=$DAYS&dry_run=$DRY_RUN ..."
-          curl -fsS -X POST \
+          curl -fsS --max-time 30 -X POST \
             -H "X-Admin-Key: $ADMIN_KEY" \
             "$BACKEND/admin/cleanup?days=$DAYS&dry_run=$DRY_RUN" \
             | python3 -m json.tool || {
